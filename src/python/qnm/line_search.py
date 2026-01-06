@@ -20,7 +20,12 @@ def _strong_wolfe(
     max_iter: int,
     alpha_max: float,
 ) -> Tuple[float, float, np.ndarray, int, int]:
-    """Simple strong-Wolfe line search (Nocedal-Wright, Alg. 3.5)."""
+    """Line search satisfying strong Wolfe conditions (Nocedal-Wright, Alg. 3.5).
+
+    The strong Wolfe conditions (Eq. 3.7, p. 34) are:
+    1. f(xk + alpha*pk) <= f(xk) + c1 * alpha * grad_f(xk).T @ pk (Sufficient decrease)
+    2. |grad_f(xk + alpha*pk).T @ pk| <= c2 * |grad_f(xk).T @ pk| (Curvature condition)
+    """
     n_fun = 0
     n_grad = 0
     phi0 = f0
@@ -48,11 +53,13 @@ def _strong_wolfe(
         n_fun += 1
         n_grad += 1
 
+        # Sufficient decrease condition (Eq. 3.7a, p. 33)
         if (f_curr > phi0 + c1 * alpha * derphi0) or (i > 0 and f_curr >= f_prev):
             return _zoom(
                 fun, grad, xk, pk, phi0, derphi0, alpha_prev, alpha, f_prev, derphi_prev, c1, c2, max_iter, alpha_max, n_fun, n_grad
             )
 
+        # Curvature condition (Eq. 3.7b, p. 34)
         if abs(derphi) <= -c2 * derphi0:
             return alpha, f_curr, g_curr, n_fun, n_grad
 
@@ -87,7 +94,7 @@ def _zoom(
     n_fun: int,
     n_grad: int,
 ) -> Tuple[float, float, np.ndarray, int, int]:
-    """Zoom phase of strong-Wolfe line search."""
+    """Zoom phase of strong-Wolfe line search (Algorithm 3.6, p. 61)."""
     alpha = alo
     f_curr = f_lo
     g_curr = np.zeros_like(pk)

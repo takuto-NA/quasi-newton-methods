@@ -14,7 +14,11 @@ def two_loop_recursion(
     s_history: Deque[np.ndarray],
     y_history: Deque[np.ndarray],
 ) -> np.ndarray:
-    """Compute -H_k * grad_k using the L-BFGS two-loop recursion."""
+    """Compute -H_k * grad_k using the L-BFGS two-loop recursion.
+
+    Following Algorithm 7.4 in Nocedal & Wright,
+    'Numerical Optimization' (2nd Ed, 2006, p. 178).
+    """
     q = grad_k.copy()
     alpha_list: list[float] = []
     rho_list: list[float] = []
@@ -29,6 +33,7 @@ def two_loop_recursion(
     if y_history:
         last_s = s_history[-1]
         last_y = y_history[-1]
+        # H_k^0 scaling factor (Eq. 7.20, p. 178)
         gamma = float(np.dot(last_s, last_y) / np.dot(last_y, last_y))
     else:
         gamma = 1.0
@@ -51,7 +56,11 @@ def lbfgs(
     line_search_kwargs: Optional[dict] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
 ) -> OptimizeResult:
-    """Limited-memory BFGS with strong-Wolfe line search."""
+    """Limited-memory BFGS with strong-Wolfe line search.
+
+    This implementation follows the L-BFGS method described in Chapter 7
+    of Nocedal & Wright, 'Numerical Optimization' (2nd Ed, 2006).
+    """
     line_search_kwargs = line_search_kwargs or {}
     x = ensure_1d(x0)
     n_fun = 0

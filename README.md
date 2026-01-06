@@ -2,72 +2,56 @@
 
 Evidence-first implementations and benchmarks for quasi-Newton methods (BFGS, L-BFGS, L-BFGS-B).
 
-## これを読めばわかること（初見向け）
-- 「何があるか」: NumPy 実装の BFGS / L-BFGS、SciPy ラッパーの L-BFGS-B、ベンチマーク問題、勾配チェック。
-- 「どう動かすか」: venv を作り `pip install -e ./src/python[dev]` して `python -m pytest` を叩けば動作確認できる。
-- 「どこが根拠か」: `docs/references/*` に出典、`docs/evidence/*` に検証結果と条件を記録。
+This project provides clear, pedagogical implementations of optimization algorithms, cross-referenced with standard literature and verified against industry-standard libraries (SciPy).
 
-## 特長
-- NumPy 実装の BFGS / L-BFGS（強 Wolfe 条件ラインサーチ付き）
-- SciPy への薄いラッパーで L-BFGS-B も利用可能（SciPy を入れれば使える）
-- Rosenbrock / 対称二次ベンチマークと有限差分による勾配チェックユーティリティ
-- VitePress 製ドキュメント（参考文献・エビデンス）
+## Why This Project?
+- **Algorithmic Transparency**: Code is mapped line-by-line to Algorithm 6.1 (BFGS) and Algorithm 7.4 (L-BFGS) in Nocedal & Wright's *Numerical Optimization*.
+- **Evidence-First**: Every implementation is verified by an automated fact-checking suite that compares results against SciPy.
+- **Implementer-Focused**: Designed for those who want to understand *how* these methods work under the hood.
 
-## 前提
-- Python 3.10+
-- SciPy は L-BFGS-B を使う場合にのみ必要（`pip install scipy` または `pip install -e ./src/python[dev]`）
-- Node.js はドキュメントを触るときだけ必要
+## Verification Status (Jan 6, 2026)
+| Method | Verification | Status |
+|--------|--------------|--------|
+| **BFGS** | Nocedal & Wright (2006) Alg 6.1 | [PASSED](./docs/evidence/baseline_results.md) |
+| **L-BFGS** | Nocedal & Wright (2006) Alg 7.4 | [PASSED](./docs/evidence/baseline_results.md) |
+| **Line Search** | Strong Wolfe (Alg 3.5/3.6) | [PASSED](./docs/evidence/baseline_results.md) |
 
-## 最短クイックスタート（動作確認まで）
+## Quick Start
+
+### 1. Installation
 ```bash
 python -m venv .venv
-# Windows (PowerShell): .\\.venv\\Scripts\\Activate.ps1
-# macOS/Linux: source .venv/bin/activate
-pip install -U pip
+# Windows: .\.venv\Scripts\Activate.ps1 | macOS/Linux: source .venv/bin/activate
 pip install -e ./src/python[dev]
-
-# 動作確認: 勾配チェックとベンチマーク問題をまとめて実行
-set PYTHONPATH=src/python  # PowerShell: $env:PYTHONPATH="src/python"; macOS/Linux: export PYTHONPATH=src/python
-python -m pytest src/python/tests
 ```
 
-## すぐ使えるサンプル
-```python
-from qnm import bfgs, lbfgs, lbfgsb, rosenbrock_problem
-
-problem = rosenbrock_problem()
-result = bfgs(problem.fun, problem.grad, problem.x0)
-print("x*", result.x)
-print("f(x*)", result.fun)
-
-# Bounds 付きの L-BFGS-B（SciPy に依存）
-# lbfgsb(problem.fun, problem.grad, problem.x0, bounds=[(-2.0, 2.0), (-1.0, 3.0)])
-```
-
-## API チートシート
-- `bfgs(fun, grad, x0, max_iter=200, tol=1e-6, line_search_kwargs=None)` → `OptimizeResult`
-- `lbfgs(fun, grad, x0, m=10, max_iter=200, tol=1e-6, line_search_kwargs=None)` → `OptimizeResult`
-- `lbfgsb(fun, grad, x0, bounds=[(lo, hi), ...], tol=1e-6, max_iter=15000)` → `OptimizeResult`（SciPy 依存）
-- ベンチマーク問題: `rosenbrock_problem(dim=2)`, `quadratic_problem(dim=5, condition_number=10, seed=0)`
-- 勾配チェック: `gradient_check(fun, grad, x)`
-
-## ドキュメント（任意）
+### 2. Verify Implementation
+Run the automated fact-checker to compare with SciPy:
 ```bash
-cd docs
-npm run docs:dev      # ローカルプレビュー
-npm run docs:build    # 静的ビルド
+export PYTHONPATH=src/python
+python src/python/scripts/verify_implementation.py
 ```
-公開済み: https://takuto-NA.github.io/quasi-newton-methods/
 
-## エビデンス・出典
-- 出典: `docs/references/*`
-- 検証条件・結果: `docs/evidence/*`（ベースライン表あり）
+### 3. Usage Example
+```python
+from qnm import bfgs, rosenbrock_problem
 
-## ディレクトリ
-- `src/python/qnm/`: Python 実装
-- `provenance/`: 参考文献・前提のメモ
-- `docs/`: VitePress ドキュメント
-- `.github/workflows/`: CI 設定
+problem = rosenbrock_problem(dim=2)
+result = bfgs(problem.fun, problem.grad, problem.x0)
 
-## ライセンス
+print(f"Optimal x: {result.x}")
+print(f"Objective value: {result.fun}")
+```
+
+## Documentation structure
+- [**Theoretical Concepts**](./docs/theory/concepts.md): Mathematical derivation and mapping to code.
+- [**Evidence & Benchmarks**](./docs/evidence/baseline_results.md): Detailed verification logs.
+- [**References**](./docs/references/papers.md): Key papers and textbooks.
+
+## Project Layout
+- `src/python/qnm/`: Core implementations (BFGS, L-BFGS, Line Search).
+- `src/python/scripts/`: Verification and benchmarking scripts.
+- `docs/`: Narrative documentation and evidence.
+
+## License
 MIT License

@@ -17,7 +17,11 @@ def bfgs(
     line_search_kwargs: Optional[dict] = None,
     callback: Optional[Callable[[OptimizeResult], None]] = None,
 ) -> OptimizeResult:
-    """Basic BFGS optimizer with strong-Wolfe line search."""
+    """Basic BFGS optimizer with strong-Wolfe line search.
+
+    This implementation follows Algorithm 6.1 in Nocedal & Wright,
+    'Numerical Optimization' (2nd Ed, 2006, p. 140).
+    """
     line_search_kwargs = line_search_kwargs or {}
     x = ensure_1d(x0)
     n = x.size
@@ -28,13 +32,16 @@ def bfgs(
     g = grad(x)
     n_fun += 1
     n_grad += 1
+    # Initialize inverse Hessian approximation as identity (Eq. 6.18)
     H = np.eye(n)
 
     for k in range(1, max_iter + 1):
         if grad_norm(g) <= tol:
             return OptimizeResult(x, f, g, k - 1, n_fun, n_grad, True, "converged", "Gradient norm below tolerance")
 
+        # Search direction (Eq. 6.18)
         p = -H @ g
+        # Strong Wolfe line search (Alg. 3.5, p. 60)
         alpha, f_new, g_new, ls_fun, ls_grad = line_search(fun, grad, x, p, f0=f, g0=g, **line_search_kwargs)
         n_fun += ls_fun
         n_grad += ls_grad
@@ -46,9 +53,10 @@ def bfgs(
         y = g_new - g
         ys = float(np.dot(y, s))
         if ys <= 1e-12:
-            # Reset to identity if curvature is lost; continue optimization.
+            # Reset to identity if curvature is lost (maintain positive definiteness)
             H = np.eye(n)
         else:
+            # BFGS inverse Hessian update (Eq. 6.17, p. 140)
             rho = 1.0 / ys
             I = np.eye(n)
             H = (I - rho * np.outer(s, y)) @ H @ (I - rho * np.outer(y, s)) + rho * np.outer(s, s)
