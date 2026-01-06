@@ -3,6 +3,7 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
   title: "quasi-newton-methods",
   description: "Evidence-first implementations and benchmarks for quasi-Newton methods",
+  base: "/quasi-newton-methods/",
   themeConfig: {
     nav: [
       { text: "Home", link: "/" },
