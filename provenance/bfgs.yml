@@ -1,0 +1,19 @@
+method: bfgs
+scope:
+  - unconstrained
+  - smooth
+references:
+  primary:
+    - title: "Nocedal & Wright - Numerical Optimization"
+      type: book
+  official_docs:
+    - title: "SciPy optimize.minimize (BFGS)"
+      url: "https://docs.scipy.org/doc/scipy/reference/optimize.minimize-bfgs.html"
+assumptions:
+  - "Line search: strong/weak Wolfe (document which)"
+  - "Curvature condition yTs > 0 handling documented"
+comparisons:
+  - "SciPy minimize(method=BFGS) with fixed tolerances"
+licenses:
+  notes: "verify licenses when incorporating code"
+

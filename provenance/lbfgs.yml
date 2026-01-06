@@ -1,0 +1,22 @@
+method: lbfgs
+scope:
+  - unconstrained
+  - smooth
+references:
+  primary:
+    - title: "Nocedal & Wright - Numerical Optimization"
+      type: book
+  official_docs:
+    - title: "SciPy optimize.minimize (L-BFGS-B)"
+      url: "https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html"
+  implementations:
+    - title: "PyTorch-LBFGS"
+      url: "https://github.com/hjmshi/PyTorch-LBFGS"
+assumptions:
+  - "Line search: strong/weak Wolfe (document which)"
+  - "Curvature condition yTs > 0 handling documented"
+comparisons:
+  - "SciPy minimize(method=L-BFGS-B) with fixed tolerances"
+licenses:
+  notes: "verify licenses when incorporating code"
+
