@@ -2,9 +2,11 @@
 
 クォジニュートン法（BFGS / L-BFGS / L-BFGS-B）の実装と、根拠やベンチマークを整理するプロジェクトです。
 
-- NumPy 実装の BFGS / L-BFGS（強 Wolfe 条件のラインサーチ付き）
-- SciPy の fmin_l_bfgs_b をラップした L-BFGS-B
-- Rosenbrock / 対称二次問題のベンチマークと勾配チェック
-- 参考文献と実験メモを Evidence として保存
+初見で知りたいこと
+- 何があるか: NumPy 実装の BFGS / L-BFGS、SciPy ベースの L-BFGS-B、ベンチマーク問題、勾配チェック。
++- どう動くか: `pip install -e ./src/python[dev]` → `PYTHONPATH=src/python python -m pytest` で動作確認できる。
+- どこを見れば根拠があるか: References（出典）と Evidence（検証ログ）に分けて記載。
 
-詳細は「References」と「Evidence」セクションを参照してください。
+Sections
+- References: 実装・ライブラリ・論文のリンク
+- Evidence: 手法・条件・ベースライン結果
