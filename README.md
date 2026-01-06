@@ -28,7 +28,26 @@ pip install -e ./src/python[dev]
 ### 2. Verify Implementation
 Run the automated fact-checker to compare with SciPy:
 ```bash
+python src/python/scripts/verify_implementation.py
+```
+
+If you prefer running without installing editable, set `PYTHONPATH`:
+
+```bash
+# macOS/Linux (bash/zsh)
 export PYTHONPATH=src/python
+python src/python/scripts/verify_implementation.py
+```
+
+```bash
+# Windows PowerShell
+$env:PYTHONPATH = "src/python"
+python src/python/scripts/verify_implementation.py
+```
+
+```bash
+# Windows cmd.exe
+set PYTHONPATH=src/python
 python src/python/scripts/verify_implementation.py
 ```
 

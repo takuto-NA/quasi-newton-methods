@@ -22,6 +22,14 @@ def lbfgsb(
     This keeps the API consistent with qnm.bfgs/lbfgs while delegating bound
     handling to SciPy. SciPy is an optional dependency; an informative error is
     raised if it is missing.
+
+    Notes on counters:
+
+    - `n_fun`: number of objective evaluations. When using SciPy's `fmin_l_bfgs_b`
+      with a callable that returns both `(f, g)`, SciPy reports `funcalls` which
+      corresponds to how many times that callable was invoked.
+    - `n_grad`: since the same callable returns the gradient each time, we set
+      `n_grad == n_fun == funcalls`.
     """
     try:
         from scipy.optimize import fmin_l_bfgs_b
