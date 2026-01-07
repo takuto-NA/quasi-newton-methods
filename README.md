@@ -5,7 +5,16 @@
 標準的な教科書（Nocedal & Wright）とコードの対応を明確にし、参照実装（主に SciPy）との比較を通じて「なぜこの実装でよいのか」を説明できる状態を目指します。
 
 補足:
-- **L-BFGS-B** は `qnm.lbfgsb` として提供していますが、これは **SciPy の参照実装に委譲するラッパー**です（自前実装の検証とは別扱いです）。
+
+- **L-BFGS-B** は `qnm.lbfgsb` として提供していますが、これは **SciPy の参照実装に委譲するラッパー**です（core 実装の検証とは別扱いです）。
+
+## 初見の人へ（まず読む場所）
+
+このプロジェクトは、単に実装を提供するだけでなく、「正しく動いているか」「なぜその実装なのか」という根拠を重視しています。
+
+- [**理論 (Theory)**](./docs/theory/concepts.md): Nocedal & Wright のアルゴリズムとコードの対応（Two-loop recursion の図解あり）。
+- [**検証 (Evidence)**](./docs/evidence/baseline_results.md): SciPy との比較結果と、合否の考え方。
+- [**出典 (References)**](./docs/references/papers.md): 論文・教科書などの一次情報。
 
 ## このプロジェクトの方針
 - **アルゴリズムの透明性**: Nocedal & Wright のアルゴリズム（BFGS: Alg 6.1 / L-BFGS: Alg 7.4）とコードを対応づけます。
@@ -29,7 +38,9 @@ pip install -e ./src/python[dev]
 ```
 
 ### 2. 実装の正当性検証（Fact-check）
+
 自動検証スクリプトを実行して、SciPy などとの比較を行います。
+
 ```bash
 python src/python/scripts/verify_implementation.py
 ```
@@ -55,6 +66,7 @@ python src/python/scripts/verify_implementation.py
 ```
 
 ### 3. 使用例
+
 ```python
 from qnm import bfgs, rosenbrock_problem
 

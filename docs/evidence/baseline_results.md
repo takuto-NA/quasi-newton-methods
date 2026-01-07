@@ -28,6 +28,11 @@
 - **BFGS**: SciPy `minimize(method='BFGS')` との差（参照比較）
 - **L-BFGS**: SciPy `minimize(method='L-BFGS-B')`（bounds無し）との差（**情報用**。一次の合否基準ではない）
 
+目安（直感的な解釈）:
+
+- `f_diff <= 1e-6` であれば、概ね同一の解に収束したとみなせます
+- `f_diff >= 1e-0` のように大きい場合、異なる局所解に落ちている可能性があります（`Status` 列と注記を参照）
+
 ## 検証テーブル（Verification Table）
 
 | Problem | Solver | Success | f(x*) | ‖∇f‖∞ | Iters | Func evals | f_diff (SciPy) | Status |
@@ -45,7 +50,7 @@
 
 ## 注記
 
-- 本テーブルは **BFGS / L-BFGS（自前実装）** の検証です。
+- 本テーブルは **`qnm`（core implementation: BFGS / L-BFGS）** の検証です。
 - **L-BFGS-B** は `qnm.lbfgsb` が SciPy の参照実装に委譲するため、ここでは「自前実装の正当性」の対象から外しています。
 
 ## Fact-Check Summary（要約）

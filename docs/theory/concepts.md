@@ -51,6 +51,32 @@ L-BFGS は大規模問題向けに、$n \times n$ 行列を保持せず、直近
 3. 初期スケーリング（Eq. 7.20）を適用
 4. 順方向パス（forward pass）: $r$（結果）を計算
 
+処理の流れ（イメージ）:
+
+```mermaid
+flowchart TD
+  input[Input: grad_gk_and_pairs_si_yi] --> initQ[initQ: q = g_k]
+
+  initQ --> backwardPass[backwardPass: i=k-1_to_k-m]
+  backwardPass --> storeAlpha[storeAlpha: alpha_i = rho_i * s_i^T q]
+  storeAlpha --> updateQ[updateQ: q = q - alpha_i * y_i]
+  updateQ --> backwardPass
+
+  backwardPass --> initialScaling[initialScaling: r = H0_k * q]
+
+  initialScaling --> forwardPass[forwardPass: i=k-m_to_k-1]
+  forwardPass --> computeBeta[computeBeta: beta = rho_i * y_i^T r]
+  computeBeta --> updateR[updateR: r = r + s_i * (alpha_i - beta)]
+  updateR --> forwardPass
+
+  forwardPass --> direction[direction: p_k = -r]
+```
+
+補足:
+
+- \(s_i = x_{i+1} - x_i\)、\(y_i = \nabla f_{i+1} - \nabla f_i\)、\(\rho_i = 1/(y_i^T s_i)\)
+- Eq. 7.20 の初期スケーリングは、典型的に \(H0_k = \gamma_k I\)、\(\gamma_k = (s_{k-1}^T y_{k-1})/(y_{k-1}^T y_{k-1})\) の形を取ります（実装により適用タイミングは異なります）。
+
 ## L-BFGS-B（境界制約付き L-BFGS）
 
 L-BFGS-B は **箱型制約（box constraints）**、すなわち
