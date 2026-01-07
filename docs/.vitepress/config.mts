@@ -28,6 +28,7 @@ export default defineConfig({
         text: "出典",
         items: [
           { text: "論文・教科書", link: "/references/papers" },
+          { text: "実装比較（BFGS / L-BFGS）", link: "/references/implementation_comparison" },
           { text: "実装（外部）", link: "/references/implementations" },
           { text: "SciPy", link: "/references/scipy" },
           { text: "記事", link: "/references/articles" }

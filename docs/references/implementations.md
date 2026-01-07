@@ -5,6 +5,9 @@
 
 SciPy の公式ドキュメントは [SciPy](/references/scipy) にまとめています。
 
+関連:
+- [実装比較（BFGS / L-BFGS）](/references/implementation_comparison)
+
 ## SciPy
 - [optimize.minimize(method='BFGS')](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-bfgs.html)
 - [optimize.minimize(method='L-BFGS-B')](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html)
