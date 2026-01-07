@@ -23,3 +23,4 @@ BFGS は 1970 年に 4 名の研究者により独立に提案されました。
 
 ## L-BFGS-B
 - **Byrd, R. H., Lu, P., Nocedal, J., & Zhu, C.** (1995). "A Limited Memory Algorithm for Bound Constrained Optimization". *SIAM Journal on Scientific and Statistical Computing*.
+  - 実装（元祖 Fortran の配布元）: [Nocedal の L-BFGS-B 配布ページ](http://users.iems.northwestern.edu/~nocedal/lbfgsb.html)

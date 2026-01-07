@@ -8,7 +8,9 @@
     "docs:preview": "vitepress preview"
   },
   "devDependencies": {
-    "vitepress": "^1.0.0"
+    "mermaid": "^11.12.2",
+    "vitepress": "^1.0.0",
+    "vitepress-plugin-mermaid": "^2.0.17"
   },
   "dependencies": {
     "markdown-it-mathjax3": "^4.3.2"

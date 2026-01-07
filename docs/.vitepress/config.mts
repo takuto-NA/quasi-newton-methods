@@ -1,7 +1,8 @@
 import { defineConfig } from "vitepress";
+import { withMermaid } from "vitepress-plugin-mermaid";
 import mathjax3 from "markdown-it-mathjax3";
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   title: "quasi-newton-methods",
   description: "準ニュートン法（BFGS / L-BFGS / L-BFGS-B）の Evidence-first 実装と検証",
   base: "/quasi-newton-methods/",
@@ -43,5 +44,5 @@ export default defineConfig({
       }
     ]
   }
-});
+}));
 

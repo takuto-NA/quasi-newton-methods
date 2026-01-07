@@ -84,7 +84,8 @@ flowchart TD
 - **独自実装**（例: bgranzow の Matlab 実装、cppoptlib の L-BFGS-B 実装）は、論文/教科書を一次参照にして“書き起こし”ているタイプで、移植ではありません。
 
 （参照リンク）
-- L-BFGS-B の派生元として挙げられる Fortran 実装は、多くのラッパー/移植の一次参照です（bgranzow READMEも参照）。例: [bgranzow/L-BFGS-B](https://github.com/bgranzow/L-BFGS-B)
+- L-BFGS-B の元祖 Fortran 実装（配布元）は、多くのラッパー/移植の一次参照です: [Nocedal の L-BFGS-B 配布ページ](http://users.iems.northwestern.edu/~nocedal/lbfgsb.html)
+- 参考: bgranzow の Matlab 実装も、論文と Fortran 実装を一次参照として明記しています: [bgranzow/L-BFGS-B](https://github.com/bgranzow/L-BFGS-B)
 - cppoptlib の L-BFGS-B は Cauchy point / subspace minimization / More-Thuente を明示して実装しています: [`lbfgsb.h`](https://raw.githubusercontent.com/PatWie/CppNumericalSolvers/main/include/cppoptlib/solver/lbfgsb.h)
 
 ## 実装者救済：まずここを押さえる（最重要チェックリスト）
