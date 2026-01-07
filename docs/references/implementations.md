@@ -18,3 +18,6 @@ SciPy の公式ドキュメントは [SciPy](/references/scipy) にまとめて�
 ## PyTorch
 - [hjmshi/PyTorch-LBFGS](https://github.com/hjmshi/PyTorch-LBFGS): PyTorch 向けの L-BFGS 実装
 
+## C++（CppNumericalSolvers / cppoptlib）
+- [PatWie/CppNumericalSolvers](https://github.com/PatWie/CppNumericalSolvers): C++ 最適化ライブラリ（BFGS / L-BFGS / L-BFGS-B を含む）
+

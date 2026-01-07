@@ -2,7 +2,7 @@
 
 `qnm` の設計判断（特に **線形探索** と **安全策**）を固めるために、広く使われている代表的な実装を **BFGS/L-BFGS + L-BFGS-B** まで含めて比較します。
 
-- 対象: `qnm.lbfgsb`（SciPyラッパー）, SciPy（BFGS / L-BFGS-B）, PyTorch（LBFGS）, libLBFGS（C）, LBFGSpp（C++）, Optim.jl（Julia）, JAXopt（JAX）, TensorFlow Probability（BFGS）, bgranzow/L-BFGS-B（別実装）
+- 対象: `qnm.lbfgsb`（SciPyラッパー）, SciPy（BFGS / L-BFGS-B）, PyTorch（LBFGS）, libLBFGS（C）, LBFGSpp（C++）, Optim.jl（Julia）, JAXopt（JAX）, TensorFlow Probability（BFGS）, bgranzow/L-BFGS-B（別実装）, CppNumericalSolvers（BFGS / L-BFGS / L-BFGS-B）
 - 注意: 実装によって「既定値」や「公開API」が異なるため、ここでは **既定挙動＋主要な設計ポイント**に焦点を当てます。
 
 ## 比較表（設計判断のための観点）
@@ -19,12 +19,73 @@
 | **JAXopt LBFGS**（JAX）<br>出典: [google/jaxopt `_src/lbfgs.py`](https://github.com/google/jaxopt/blob/main/jaxopt/_src/lbfgs.py) | 無制約 / 大規模（pytree） | `linesearch` を選択（`zoom` / `backtracking` / `hager-zhang`） | `rho = 1/(s^T y)` を計算し、`s^T y == 0` は `rho=0` にする等の防御（実装側） | `use_gamma` で **Eq. 7.20** の `gamma * I` を使用（`compute_gamma`） | `tol`（誤差）、`maxiter`、`stop_if_linesearch_fails` など |
 | **TFP BFGS**（TensorFlow Probability）<br>出典: [tensorflow/probability `python/optimizer/bfgs.py`](https://github.com/tensorflow/probability/blob/main/tensorflow_probability/python/optimizer/bfgs.py) | 無制約 / バッチ対応 | **Hager-Zhang**（モジュール冒頭で明記） | 逆ヘッセ推定を保持し、`scale_initial_inverse_hessian` 等で安定化の余地 | `scale_initial_inverse_hessian`（初期逆ヘッセのスケーリング） | `tolerance`（勾配supノルム）、`x_tolerance`、`f_relative_tolerance`、`f_absolute_tolerance`、`max_iterations`、`max_line_search_iterations` |
 | **bgranzow/L-BFGS-B**（Matlab）<br>出典: [bgranzow/L-BFGS-B `LBFGSB.m`](https://raw.githubusercontent.com/bgranzow/L-BFGS-B/master/LBFGSB.m) | **境界制約** / 大規模 | `strong_wolfe()`（**Strong Wolfe**。`c1=1e-4`,`c2=0.9`）を内蔵。`subspace_min()` が有効なときのみ line search 実行 | `curv = s^T y` を計算し、`curv < eps` なら **警告して更新スキップ**（負曲率検出） | `theta = (y^T y)/(y^T s)` を更新し、`W=[Y, theta*S]` を構成（L-BFGS-Bの内部表現） | `get_optimality()` による **投影勾配の∞ノルム**が `tol` 以下、または `max_iters` 到達 |
+| **cppoptlib BFGS**（C++ / CppNumericalSolvers）<br>出典: [PatWie/CppNumericalSolvers `bfgs.h`](https://raw.githubusercontent.com/PatWie/CppNumericalSolvers/main/include/cppoptlib/solver/bfgs.h) | 無制約 / 中小規模（密行列） | **More-Thuente** line search（`more_thuente.h`） | `g^T p > 0` または `nan` で **H を単位行列にリセット**し、`p=-g` にフォールバック | 初期 `H=I` | **既定**: `max_iter=10000`、`x_delta=||Δx||_∞ < 1e-9` が **5回連続**、`f_delta=|Δf| < 1e-9` が **5回連続**、`||g||_∞ < 1e-6`（出典: [`progress.h`](https://raw.githubusercontent.com/PatWie/CppNumericalSolvers/main/include/cppoptlib/solver/progress.h)） |
+| **cppoptlib L-BFGS**（C++ / CppNumericalSolvers）<br>出典: [PatWie/CppNumericalSolvers `lbfgs.h`](https://raw.githubusercontent.com/PatWie/CppNumericalSolvers/main/include/cppoptlib/solver/lbfgs.h) | 無制約 / 大規模 | **More-Thuente** line search（`more_thuente.h`） | 降下方向が無効なら `p=-g` にフォールバックし、**履歴をリセット**。さらに cautious update（`cautious_factor_`）で曲率が弱い更新を拒否 | `scaling_factor_` を適応更新（概ね \((s^T y)/(y^T y)\) 系） | **既定**: `max_iter=10000`、`x_delta=||Δx||_∞ < 1e-9` が **5回連続**、`f_delta=|Δf| < 1e-9` が **5回連続**、`||g||_∞ < 1e-6`（出典: [`progress.h`](https://raw.githubusercontent.com/PatWie/CppNumericalSolvers/main/include/cppoptlib/solver/progress.h)） |
+| **cppoptlib L-BFGS-B**（C++ / CppNumericalSolvers）<br>出典: [PatWie/CppNumericalSolvers `lbfgsb.h`](https://raw.githubusercontent.com/PatWie/CppNumericalSolvers/main/include/cppoptlib/solver/lbfgsb.h) | **境界制約** / 大規模 | **More-Thuente** line search（`more_thuente.h`） | `test = |s^T y|` による更新採択（`test > 1e-7 * ||y||^2` のときのみ履歴更新） | `theta_` 更新、`W`/`M` を構成（L-BFGS-Bの内部表現） | **既定**: `max_iter=10000`、`x_delta=||Δx||_∞ < 1e-9` が **5回連続**、`f_delta=|Δf| < 1e-9` が **5回連続**、`||g||_∞ < 1e-6`（出典: [`progress.h`](https://raw.githubusercontent.com/PatWie/CppNumericalSolvers/main/include/cppoptlib/solver/progress.h)） |
 
 ## `qnm` の設計判断に直結する読み取り（要点）
 
 - **線形探索は実装差分の最大要因**: 同じBFGS/L-BFGSでも、Strong Wolfe / More-Thuente / Hager-Zhang / Backtracking の違いが収束性・頑健性に大きく影響する。`qnm` で「強 Wolfe」を採用しているのは、理論的な性質（曲率条件）と実装の素直さのバランスが良いため。
 - **安全策は “曲率が弱いときどうするか” に集約される**: 多くの実装が `s^T y` が十分大きいときだけ履歴更新する、あるいは保険的分岐を入れる。`qnm` でも同様に、更新の安全策（リセット/スキップ）を明示する方が、再現性と説明可能性が上がる。
 - **初期スケーリング（Eq. 7.20）は実用上効く**: L-BFGS の多くの実装で（明示/暗黙に）採用されている。`qnm` で採用する場合は「いつ適用するか（初回/毎回/リセット後）」を仕様として固定するとよい。
+
+## 系譜（何が“元祖”で、何が派生か）
+
+重要: BFGS/L-BFGS/L-BFGS-B は「単一の聖典実装」ではなく、**(1) 教科書アルゴリズム**と **(2) 線形探索の名実装**、そして **(3) L-BFGS-B の元祖Fortran実装**の3系統が合流して、各ライブラリに派生していることが多いです。
+
+### 系統図（概念）
+
+```mermaid
+flowchart TD
+  NW[NocedalWright2006_Textbook] --> BFGSTheory[BFGS_Algorithm]
+  NW --> LBFGSTheory[LBFGS_TwoLoop]
+  Byrd95[ByrdEtAl1995_LBFGSB] --> LBFGSBTheory[LBFGSB_CauchyPoint_Subspace]
+
+  MT[MoreThuente_LineSearch] --> SciPyBFGS[SciPy_BFGS]
+  MT --> cppoptBFGS[cppoptlib_BFGS]
+  MT --> cppoptLBFGS[cppoptlib_LBFGS]
+  MT --> cppoptLBFGSB[cppoptlib_LBFGSB]
+
+  SW[StrongWolfe_LineSearch] --> SciPyBFGS
+  SW --> PyTorchLBFGS[PyTorch_LBFGS]
+  SW --> bgranzowLBFGSB[bgranzow_LBFGSB_Matlab]
+
+  HZ[HagerZhang_LineSearch] --> OptimLBFGS[Optim_jl_LBFGS]
+  HZ --> TFPBFGS[TFP_BFGS]
+
+  BFGSTheory --> SciPyBFGS
+  BFGSTheory --> TFPBFGS
+  BFGSTheory --> cppoptBFGS
+
+  LBFGSTheory --> PyTorchLBFGS
+  LBFGSTheory --> OptimLBFGS
+  LBFGSTheory --> JAXoptLBFGS[JAXopt_LBFGS]
+  LBFGSTheory --> LBFGSpp[LBFGSpp_LBFGS]
+  LBFGSTheory --> libLBFGS[libLBFGS_C]
+  LBFGSTheory --> cppoptLBFGS
+
+  LBFGSBTheory --> SciPyLBFGSB[SciPy_LBFGSB]
+  LBFGSBTheory --> bgranzowLBFGSB
+  LBFGSBTheory --> cppoptLBFGSB
+
+  SciPyLBFGSB --> qnmLBFGSB[qnm_lbfgsb_wrapper]
+
+  SciPyLBFGSB -->|"Fortran_v3.0_translated"| SciPyCImpl[SciPy_LBFGSB_Core]
+  FortranImpl[LBFGSB_Fortran_Original] --> SciPyCImpl
+  FortranImpl -->|"Reference"| LBFGSBTheory
+```
+
+### この図を読むコツ
+
+- **BFGS/L-BFGS（無制約）**は「教科書アルゴリズム + 採用した線形探索（More-Thuente / Strong Wolfe / Hager-Zhang）」が“実質の祖先”になりやすい。
+  - 同じBFGSでも、線形探索が違うと挙動が大きく変わります。
+- **L-BFGS-B（境界制約）**は「元祖 Fortran 実装」が強い影響源で、SciPy はその系譜に入ります。
+  - `qnm.lbfgsb` は SciPy に委譲するため、この系譜上にぶら下がります。
+- **独自実装**（例: bgranzow の Matlab 実装、cppoptlib の L-BFGS-B 実装）は、論文/教科書を一次参照にして“書き起こし”ているタイプで、移植ではありません。
+
+（参照リンク）
+- L-BFGS-B の派生元として挙げられる Fortran 実装は、多くのラッパー/移植の一次参照です（bgranzow READMEも参照）。例: [bgranzow/L-BFGS-B](https://github.com/bgranzow/L-BFGS-B)
+- cppoptlib の L-BFGS-B は Cauchy point / subspace minimization / More-Thuente を明示して実装しています: [`lbfgsb.h`](https://raw.githubusercontent.com/PatWie/CppNumericalSolvers/main/include/cppoptlib/solver/lbfgsb.h)
 
 ## 実装者救済：まずここを押さえる（最重要チェックリスト）
 
