@@ -3,7 +3,7 @@ import mathjax3 from "markdown-it-mathjax3";
 
 export default defineConfig({
   title: "quasi-newton-methods",
-  description: "Evidence-first implementations and benchmarks for quasi-Newton methods",
+  description: "準ニュートン法（BFGS / L-BFGS / L-BFGS-B）の Evidence-first 実装と検証",
   base: "/quasi-newton-methods/",
   markdown: {
     config: (md) => {
@@ -12,32 +12,32 @@ export default defineConfig({
   },
   themeConfig: {
     nav: [
-      { text: "Home", link: "/" },
-      { text: "Theory", link: "/theory/concepts" },
-      { text: "References", link: "/references/implementations" },
-      { text: "Evidence", link: "/evidence/methodology" }
+      { text: "ホーム", link: "/" },
+      { text: "理論", link: "/theory/concepts" },
+      { text: "出典", link: "/references/papers" },
+      { text: "検証", link: "/evidence/methodology" }
     ],
     sidebar: [
       {
-        text: "Theory",
+        text: "理論",
         items: [
-          { text: "Concepts", link: "/theory/concepts" },
+          { text: "理論まとめ", link: "/theory/concepts" },
         ]
       },
       {
-        text: "References",
+        text: "出典",
         items: [
-          { text: "Implementations", link: "/references/implementations" },
+          { text: "論文・教科書", link: "/references/papers" },
+          { text: "実装（外部）", link: "/references/implementations" },
           { text: "SciPy", link: "/references/scipy" },
-          { text: "Articles", link: "/references/articles" },
-          { text: "Papers", link: "/references/papers" }
+          { text: "記事", link: "/references/articles" }
         ]
       },
       {
-        text: "Evidence",
+        text: "検証（Evidence）",
         items: [
-          { text: "Methodology", link: "/evidence/methodology" },
-          { text: "Baseline Results", link: "/evidence/baseline_results" }
+          { text: "方法（Methodology）", link: "/evidence/methodology" },
+          { text: "ベースライン結果", link: "/evidence/baseline_results" }
         ]
       }
     ]

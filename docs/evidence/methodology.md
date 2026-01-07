@@ -21,7 +21,10 @@
 ## 3. 比較方針（SciPyを主参照、必要なら他参照も併用）
 
 - **BFGS**: SciPy `minimize(method='BFGS')` を主参照に比較する。ただし SciPy と `qnm` ではラインサーチ等のヒューリスティクスが一致しないため、最終値/解が異なる場合がある。その場合は **既知解への近さ** と **勾配ノルム**を一次基準にして妥当性を判断する。
-- **L-BFGS**: SciPyの `minimize(method='L-BFGS-B')` は存在するが、`qnm.lbfgs`（boundなしL-BFGS）とは同一実装ではない。よって L-BFGS は\n+  - 一次: 性質テスト（降下方向、Wolfe充足、既知解収束）\n+  - 二次: 参考比較（例: SciPy L-BFGS-B を bounds無しで実行した最終値）\n+ という二段構えにする。
+- **L-BFGS**: SciPyの `minimize(method='L-BFGS-B')` は存在するが、`qnm.lbfgs`（boundなし L-BFGS）とは同一実装ではない。よって L-BFGS は以下の二段構えにする。
+  - 一次: 性質テスト（降下方向、Wolfe 充足、既知解への収束）
+  - 二次: 参考比較（例: SciPy L-BFGS-B を bounds 無しで実行した最終値）
+- **L-BFGS-B**: `qnm.lbfgsb` は SciPy の参照実装（`scipy.optimize.fmin_l_bfgs_b`）に委譲するラッパーであり、Evidence では「自前実装の正当性」という観点の一次検証対象から外す（SciPy 側の正当性に依存する）。
 
 ## 4. Evidence Status（合否定義）
 

@@ -1,56 +1,66 @@
-# Theoretical Concepts
+# 理論（Theoretical Concepts）
 
-This project implements Quasi-Newton methods based on the mathematical foundations laid out in **Nocedal & Wright, "Numerical Optimization" (2006)**.
+本プロジェクトは **Nocedal & Wright『Numerical Optimization』（2006）** の定式化に基づき、準ニュートン法（Quasi-Newton methods）を実装しています。
 
-## Newton vs. Quasi-Newton
+## Newton 法と準ニュートン法（Newton vs. Quasi-Newton）
 
-Newton's method uses the Second-Order Taylor expansion:
+Newton 法は 2 次の Taylor 展開を用います。
+
 $$f(x_k + p) \approx f(x_k) + \nabla f(x_k)^T p + \frac{1}{2} p^T \nabla^2 f(x_k) p$$
 
-The search direction is $p_k = -(\nabla^2 f(x_k))^{-1} \nabla f(x_k)$. However, calculating and inverting the Hessian $\nabla^2 f(x_k)$ is computationally expensive ($O(n^3)$) or sometimes impossible.
+探索方向は $p_k = -(\nabla^2 f(x_k))^{-1} \nabla f(x_k)$ です。一方で、ヘッセ行列 $\nabla^2 f(x_k)$ の計算・逆行列計算は計算量が大きく（概ね $O(n^3)$）、現実的でない場合があります。
 
-**Quasi-Newton methods** replace the exact Hessian with an approximation $B_k$ (or its inverse $H_k$) that is updated using only gradient information.
+**準ニュートン法（Quasi-Newton methods）**では、ヘッセ行列を近似行列 $B_k$（またはその逆行列近似 $H_k$）で置き換え、勾配情報のみで更新します。
 
-## BFGS (Broyden-Fletcher-Goldfarb-Shanno)
+## BFGS（Broyden-Fletcher-Goldfarb-Shanno）
 
-BFGS is the most popular Quasi-Newton method. It maintains an approximation of the *inverse* Hessian $H_k$.
+BFGS は代表的な準ニュートン法で、ヘッセ行列の**逆行列**近似 $H_k$ を更新します。
 
-### The Secant Equation
-The update must satisfy the secant equation:
+### セカント条件（Secant equation）
+
+更新は次のセカント条件を満たす必要があります。
+
 $$H_{k+1} y_k = s_k$$
-where $s_k = x_{k+1} - x_k$ and $y_k = \nabla f_{k+1} - \nabla f_k$.
 
-### The Update Formula (Eq. 6.17, p. 140)
+ここで $s_k = x_{k+1} - x_k$、$y_k = \nabla f_{k+1} - \nabla f_k$ です。
+
+### 更新式（Eq. 6.17, p. 140）
+
 $$H_{k+1} = (I - \rho_k s_k y_k^T) H_k (I - \rho_k y_k s_k^T) + \rho_k s_k s_k^T$$
-where $\rho_k = 1 / (y_k^T s_k)$.
 
-### Curvature Condition
-For $H_{k+1}$ to remain positive definite, we require the curvature condition:
+ただし $\rho_k = 1 / (y_k^T s_k)$ です。
+
+### 曲率条件（Curvature condition）
+
+$H_{k+1}$ が正定（positive definite）であり続けるために、曲率条件
+
 $$s_k^T y_k > 0$$
-This is guaranteed if the line search satisfies the **Wolfe conditions**.
 
-## L-BFGS (Limited-memory BFGS)
+が必要です。これはラインサーチが **Wolfe 条件（Wolfe conditions）** を満たす場合に保証されます。
 
-L-BFGS is designed for large-scale problems where storing the full $n \times n$ Hessian is impractical. Instead of storing $H_k$, it stores the last $m$ pairs of $\{s_i, y_i\}$.
+## L-BFGS（Limited-memory BFGS）
 
-### Two-Loop Recursion (Alg. 7.4, p. 178)
-The search direction $p_k = -H_k \nabla f_k$ is computed efficiently without explicitly forming $H_k$.
+L-BFGS は大規模問題向けに、$n \times n$ 行列を保持せず、直近 $m$ ステップの $\{s_i, y_i\}$ のみを保持します。
 
-1.  Compute $q$ from current gradient.
-2.  Backward pass: Update $q$ using stored $s_i, y_i$.
-3.  Apply initial scaling (Eq. 7.20).
-4.  Forward pass: Compute $r$ (result).
+### Two-loop recursion（Alg. 7.4, p. 178）
 
-## Strong Wolfe Line Search
+探索方向 $p_k = -H_k \nabla f_k$ は、$H_k$ を明示的に構成せずに計算できます。
 
-To ensure stability and convergence, the step size $\alpha$ must satisfy the **Strong Wolfe conditions** (Eq. 3.7, p. 34):
+1. 現在の勾配から $q$ を作る
+2. 逆順パス（backward pass）: 保存された $s_i, y_i$ を用いて $q$ を更新
+3. 初期スケーリング（Eq. 7.20）を適用
+4. 順方向パス（forward pass）: $r$（結果）を計算
 
-1.  **Sufficient Decrease**: $f(x_k + \alpha p_k) \le f(x_k) + c_1 \alpha \nabla f_k^T p_k$
-2.  **Curvature Condition**: $|\nabla f(x_k + \alpha p_k)^T p_k| \le c_2 |\nabla f_k^T p_k|$
+## 強 Wolfe ラインサーチ（Strong Wolfe line search）
 
-We use $c_1 = 10^{-4}$ and $c_2 = 0.9$ as recommended by Nocedal & Wright.
+安定性と収束を確保するため、ステップサイズ $\alpha$ は **強 Wolfe 条件（Strong Wolfe conditions）**（Eq. 3.7, p. 34）を満たす必要があります。
 
-## References
-- Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization*. Springer Science & Business Media.
+1. **十分減少条件（Sufficient decrease）**: $f(x_k + \alpha p_k) \le f(x_k) + c_1 \alpha \nabla f_k^T p_k$
+2. **曲率条件（Curvature condition）**: $|\nabla f(x_k + \alpha p_k)^T p_k| \le c_2 |\nabla f_k^T p_k|$
+
+本実装では Nocedal & Wright の推奨に従い、$c_1 = 10^{-4}$、$c_2 = 0.9$ を用います。
+
+## 参考文献（References）
+- Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization*. Springer.
 - Liu, D. C., & Nocedal, J. (1989). "On the limited memory BFGS method for large scale optimization". *Mathematical Programming*.
 

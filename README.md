@@ -1,13 +1,16 @@
 # quasi-newton-methods
 
-Evidence-first implementations and benchmarks for quasi-Newton methods (BFGS, L-BFGS, L-BFGS-B).
+準ニュートン法（BFGS / L-BFGS / L-BFGS-B）の **Evidence-first** な実装と検証をまとめたリポジトリです。
 
-This project provides clear, pedagogical implementations of optimization algorithms, cross-referenced with standard literature and verified against industry-standard libraries (SciPy).
+標準的な教科書（Nocedal & Wright）とコードの対応を明確にし、参照実装（主に SciPy）との比較を通じて「なぜこの実装でよいのか」を説明できる状態を目指します。
 
-## Why This Project?
-- **Algorithmic Transparency**: Code is mapped line-by-line to Algorithm 6.1 (BFGS) and Algorithm 7.4 (L-BFGS) in Nocedal & Wright's *Numerical Optimization*.
-- **Evidence-First**: Every implementation is verified by an automated fact-checking suite that compares results against SciPy.
-- **Implementer-Focused**: Designed for those who want to understand *how* these methods work under the hood.
+補足:
+- **L-BFGS-B** は `qnm.lbfgsb` として提供していますが、これは **SciPy の参照実装に委譲するラッパー**です（自前実装の検証とは別扱いです）。
+
+## このプロジェクトの方針
+- **アルゴリズムの透明性**: Nocedal & Wright のアルゴリズム（BFGS: Alg 6.1 / L-BFGS: Alg 7.4）とコードを対応づけます。
+- **Evidence-first**: 「参照実装との完全一致」ではなく、理論上の性質と差分の説明可能性を重視します。
+- **実装者向け**: 手法を “使う” だけでなく “実装する” ための最短距離を意識します。
 
 ## Verification Status (Jan 6, 2026)
 | Method | Verification | Status |
@@ -16,25 +19,25 @@ This project provides clear, pedagogical implementations of optimization algorit
 | **L-BFGS** | Nocedal & Wright (2006) Alg 7.4 | [PASSED](./docs/evidence/baseline_results.md) |
 | **Line Search** | Strong Wolfe (Alg 3.5/3.6) | [PASSED](./docs/evidence/baseline_results.md) |
 
-## Quick Start
+## クイックスタート
 
-### 1. Installation
+### 1. インストール
 ```bash
 python -m venv .venv
 # Windows: .\.venv\Scripts\Activate.ps1 | macOS/Linux: source .venv/bin/activate
 pip install -e ./src/python[dev]
 ```
 
-### 2. Verify Implementation
-Run the automated fact-checker to compare with SciPy:
+### 2. 実装の正当性検証（Fact-check）
+自動検証スクリプトを実行して、SciPy などとの比較を行います。
 ```bash
 python src/python/scripts/verify_implementation.py
 ```
 
-If you prefer running without installing editable, set `PYTHONPATH`:
+編集インストールを使わずに実行する場合は、`PYTHONPATH` を設定してください。
 
 ```bash
-# macOS/Linux (bash/zsh)
+# macOS/Linux (bash/zsh) / Git Bash
 export PYTHONPATH=src/python
 python src/python/scripts/verify_implementation.py
 ```
@@ -51,7 +54,7 @@ set PYTHONPATH=src/python
 python src/python/scripts/verify_implementation.py
 ```
 
-### 3. Usage Example
+### 3. 使用例
 ```python
 from qnm import bfgs, rosenbrock_problem
 
@@ -62,12 +65,12 @@ print(f"Optimal x: {result.x}")
 print(f"Objective value: {result.fun}")
 ```
 
-## Documentation structure
-- [**Theoretical Concepts**](./docs/theory/concepts.md): Mathematical derivation and mapping to code.
-- [**Evidence & Benchmarks**](./docs/evidence/baseline_results.md): Detailed verification logs.
-- [**References**](./docs/references/papers.md): Key papers and textbooks.
+## ドキュメント構成
+- [**理論 (Theory)**](./docs/theory/concepts.md): 数学的背景とコードへの対応。
+- [**検証 (Evidence)**](./docs/evidence/baseline_results.md): 比較結果と検証ログ。
+- [**出典 (References)**](./docs/references/papers.md): 論文・教科書などの一覧。
 
-## Project Layout
+## ディレクトリ構成
 - `src/python/qnm/`: Core implementations (BFGS, L-BFGS, Line Search).
 - `src/python/scripts/`: Verification and benchmarking scripts.
 - `docs/`: Narrative documentation and evidence.

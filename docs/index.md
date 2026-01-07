@@ -6,18 +6,38 @@
 
 このプロジェクトは、単なる実装の提供だけでなく、「正しく動いているか」「なぜこの実装なのか」という**根拠（Evidence）**を重視しています。
 
-- **[理論解説 (Theory)](./theory/concepts.md)**: Nocedal & Wright のアルゴリズムとコードの対応。
-- **[検証結果 (Evidence)](./evidence/baseline_results.md)**: SciPy との比較結果と、勾配チェックの結果。
-- **[出典 (References)](./references/papers.md)**: 基礎となる論文と教科書のリスト。
+- **[理論解説 (Theory)](/theory/concepts)**: Nocedal & Wright のアルゴリズムとコードの対応。
+- **[検証結果 (Evidence)](/evidence/baseline_results)**: SciPy との比較結果と、勾配チェックの結果。
+- **[出典 (References)](/references/papers)**: 基礎となる論文と教科書のリスト。
 
 ## クイックスタート
 
 ```bash
-# インストール
+# （推奨）インストール
 pip install -e ./src/python[dev]
 
 # 実装の正当性検証 (Fact-check)
-PYTHONPATH=src/python python src/python/scripts/verify_implementation.py
+python src/python/scripts/verify_implementation.py
+```
+
+編集インストールを使わずに実行する場合は、`PYTHONPATH` を設定してください。
+
+```bash
+# macOS/Linux (bash/zsh) / Git Bash
+export PYTHONPATH=src/python
+python src/python/scripts/verify_implementation.py
+```
+
+```bash
+# Windows PowerShell
+$env:PYTHONPATH = "src/python"
+python src/python/scripts/verify_implementation.py
+```
+
+```bash
+# Windows cmd.exe
+set PYTHONPATH=src/python
+python src/python/scripts/verify_implementation.py
 ```
 
 ## 実装されている手法
