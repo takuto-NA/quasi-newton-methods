@@ -23,6 +23,9 @@ export default withMermaid(defineConfig({
         text: "理論",
         items: [
           { text: "理論まとめ", link: "/theory/concepts" },
+          { text: "BFGS", link: "/theory/bfgs" },
+          { text: "L-BFGS", link: "/theory/lbfgs" },
+          { text: "L-BFGS-B", link: "/theory/lbfgsb" }
         ]
       },
       {

@@ -42,7 +42,7 @@ python src/python/scripts/verify_implementation.py
 
 ## 実装されている手法
 
-1.  **BFGS**: 逆ヘッセ行列を直接更新する標準的な手法。
-2.  **L-BFGS**: メモリ節約型の準ニュートン法（Two-loop recursion）。
+1.  **[BFGS](/theory/bfgs)**: 逆ヘッセ行列を直接更新する標準的な手法。
+2.  **[L-BFGS](/theory/lbfgs)**: メモリ節約型の準ニュートン法（Two-loop recursion）。
 3.  **Line Search**: 強 Wolfe 条件を満たすステップサイズ決定アルゴリズム。
-4.  **L-BFGS-B**: 境界制約付き（SciPy ラッパー）。
+4.  **[L-BFGS-B](/theory/lbfgsb)**: 境界制約付き（SciPy ラッパー）。
