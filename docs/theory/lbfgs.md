@@ -207,8 +207,8 @@ def compute_direction(g_k, history):
 ```mermaid
 flowchart TD
     G[g_k] --> Q0["q <- g_k"] --> Back["Backward_pass\nq <- q - alpha_i y_i"] --> Scale["r <- gamma_k * q"] --> Fwd["Forward_pass\nr <- r + s_i (alpha_i - beta)"] --> P["p_k <- -r"]
-    SH[(s_history)] --> Back
-    YH[(y_history)] --> Back
+    SH[("s_history")] --> Back
+    YH[("y_history")] --> Back
     SH --> Fwd
     YH --> Fwd
 ```
@@ -306,16 +306,16 @@ BFGS の「超一次収束」には劣りますが、$m$ を増やすことで�
 
 ```mermaid
 flowchart TD
-    Start([k-th_iter]) --> Dir[Compute_p_k_by_two_loop]
-    Dir --> Descent{p_k^T g_k < 0?}
+    Start(["k-th_iter"]) --> Dir[Compute_p_k_by_two_loop]
+    Dir --> Descent{"p_k^T g_k < 0?"}
     Descent -- No --> Reset1["Clear_memory\np_k <- -g_k"]
     Descent -- Yes --> LS[Strong_Wolfe_line_search]
     Reset1 --> LS
     LS --> Step["x_{k+1}=x_k+alpha p_k"]
     Step --> Curv{"y_k^T s_k > 1e-12?"}
-    Curv -- Yes --> Push[Append_(s_k,y_k)]
+    Curv -- Yes --> Push["Append_(s_k,y_k)"]
     Curv -- No --> Reset2[Clear_memory]
-    Push --> Next([next_k])
+    Push --> Next(["next_k"])
     Reset2 --> Next
 ```
 

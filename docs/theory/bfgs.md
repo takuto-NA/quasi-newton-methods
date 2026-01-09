@@ -36,16 +36,16 @@ $$s_k^T y_k > 0$$
 
 ```mermaid
 flowchart TD
-    Start([開始]) --> Init[初期化: x_0, H_0 = I]
-    Init --> Loop{収束判定: ||grad|| < tol?}
-    Loop -- Yes --> End([終了])
-    Loop -- No --> SearchDir[探索方向の決定: p_k = -H_k grad_k]
-    SearchDir --> LineSearch[ラインサーチ: 強 Wolfe 条件を満たす alpha を決定]
-    LineSearch --> UpdateX[変数の更新: x_k+1 = x_k + alpha * p_k]
-    UpdateX --> CalcGrad[新しい勾配 grad_k+1 の計算]
-    CalcGrad --> CheckCurvature{曲率条件 s^T y > 1e-12?}
-    CheckCurvature -- Yes --> UpdateH[BFGS更新式による H_k+1 の計算]
-    CheckCurvature -- No --> ResetH[H_k+1 = I にリセット]
+    Start(["開始"]) --> Init["初期化: x_0, H_0 = I"]
+    Init --> Loop{"収束判定: ||grad|| < tol?"}
+    Loop -- Yes --> End(["終了"])
+    Loop -- No --> SearchDir["探索方向の決定: p_k = -H_k grad_k"]
+    SearchDir --> LineSearch["ラインサーチ: 強 Wolfe 条件を満たす alpha を決定"]
+    LineSearch --> UpdateX["変数の更新: x_k+1 = x_k + alpha * p_k"]
+    UpdateX --> CalcGrad["新しい勾配 grad_k+1 の計算"]
+    CalcGrad --> CheckCurvature{"曲率条件 s^T y > 1e-12?"}
+    CheckCurvature -- Yes --> UpdateH["BFGS更新式による H_k+1 の計算"]
+    CheckCurvature -- No --> ResetH["H_k+1 = I にリセット"]
     UpdateH --> Loop
     ResetH --> Loop
 ```
