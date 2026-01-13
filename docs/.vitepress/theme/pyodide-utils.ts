@@ -36,7 +36,8 @@ export async function getPyodide() {
  * Syncs local Python source files to Pyodide's virtual file system.
  */
 export async function syncPythonSource(pyodide: any, files: string[]) {
-  const baseUrl = "/quasi-newton-methods/qnm/";
+  // VitePress: devでは "/"、GitHub Pagesでは config.base に一致する
+  const baseUrl = `${import.meta.env.BASE_URL}qnm/`;
   
   // Create directory if not exists
   pyodide.FS.mkdirTree("/home/pyodide/qnm");

@@ -15,6 +15,7 @@ const results = ref<any>(null);
 const currentIteration = ref(0);
 const history = ref<any[]>([]);
 const output = ref('');
+const dimension = computed(() => props.dim ?? 2);
 
 const pythonFiles = [
   '__init__.py',
@@ -56,7 +57,7 @@ async function runOptimization() {
     pyodide.globals.set('on_step_js', (res: any) => {
       const data = res.toJs({ dict_converter: Object.fromEntries });
       history.value.push(data);
-      currentIteration.value = data.nit;
+      currentIteration.value = data.n_iter;
     });
 
     const pythonCode = `
@@ -65,22 +66,12 @@ from qnm.${props.algorithm} import ${props.algorithm}
 from qnm.problems import ${props.problemType}_problem
 
 # Setup problem
-prob = ${props.problemType}_problem(dim=${props.dim || 2})
+prob = ${props.problemType}_problem(dim=${dimension.value})
 
 def callback(res):
     # Convert result to a dict that JS can handle easily
-    # H is only available in BFGS
-    h_matrix = None
-    if hasattr(res, 'H'):
-        h_matrix = res.H.tolist()
-    elif "${props.algorithm}" == "bfgs":
-        # In our bfgs.py, H is not in OptimizeResult yet, we might need to modify it 
-        # or capture it here if we were inside the function.
-        # For now, let's assume we want to see H.
-        pass
-
     step_data = {
-        "nit": int(res.nit),
+        "n_iter": int(res.n_iter),
         "fun": float(res.fun),
         "x": res.x.tolist(),
         "grad_norm": float(np.linalg.norm(res.grad)),
@@ -97,7 +88,6 @@ def callback(res):
         if 'y_history' in res.extra_info:
             step_data['y_history'] = res.extra_info['y_history']
     
-    import on_step_js
     on_step_js(step_data)
 
 # Run optimization
@@ -152,7 +142,7 @@ onMounted(() => {
       <div class="metrics">
         <div class="metric-card">
           <label>Iteration</label>
-          <span>{{ latestState.nit }}</span>
+          <span>{{ latestState.n_iter }}</span>
         </div>
         <div class="metric-card">
           <label>Function Value</label>
@@ -166,7 +156,7 @@ onMounted(() => {
 
       <div v-if="latestH" class="matrix-viz">
         <h3>近似逆ヘッセ行列 $H$</h3>
-        <div class="matrix-grid" :style="{ gridTemplateColumns: `repeat(${dim || 2}, 1fr)` }">
+        <div class="matrix-grid" :style="{ gridTemplateColumns: `repeat(${dimension}, 1fr)` }">
           <div v-for="(row, i) in latestH" :key="i" class="matrix-row">
             <div v-for="(val, j) in row" :key="j" class="matrix-cell" 
                  :style="{ backgroundColor: `rgba(64, 128, 255, ${Math.min(Math.abs(val), 1)})` }">
