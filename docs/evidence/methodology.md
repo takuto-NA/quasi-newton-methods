@@ -1,40 +1,40 @@
 # Methodology
 
-このプロジェクトの Evidence は「参照実装との完全一致」を目的とせず、**(1) 理論上の性質**と **(2) 参照実装（主に SciPy）との差分が説明可能であること**を確認するためのものです。
+This project's Evidence does not aim for "exact match with reference implementations" but rather confirms that **(1) theoretical properties** and **(2) differences from reference implementations (primarily SciPy) are explainable**.
 
-## 1. 共通設定
+## 1. Common Settings
 
-- 初期値: 問題定義（`qnm.problems`）に従う
-- 停止条件: `‖∇f(x)‖∞ <= tol`
-- 反復上限: solverの `max_iter`
-- ラインサーチ: Strong Wolfe（`qnm.line_search`、既定 `c1=1e-4, c2=0.9`）
+- Initial values: According to problem definitions (`qnm.problems`)
+- Stopping condition: `‖∇f(x)‖∞ <= tol`
+- Iteration limit: solver's `max_iter`
+- Line search: Strong Wolfe (`qnm.line_search`, default `c1=1e-4, c2=0.9`)
 
-## 2. 記録する指標
+## 2. Metrics Recorded
 
 - Iterations (`n_iter`)
 - Function evaluations (`n_fun`)
 - Gradient evaluations (`n_grad`)
-- 最終目的関数値 `f(x*)`
-- 勾配無限大ノルム `‖∇f‖∞`
-- 参考: SciPyとの差分（ただし後述の理由で **合否判定の一次基準にはしない**）
+- Final objective function value `f(x*)`
+- Gradient infinity norm `‖∇f‖∞`
+- Reference: Difference from SciPy (however, **not used as a primary criterion** for the reasons below)
 
-## 3. 比較方針（SciPyを主参照、必要なら他参照も併用）
+## 3. Comparison Strategy (SciPy as primary reference, others used as needed)
 
-- **BFGS**: SciPy `minimize(method='BFGS')` を主参照に比較する。ただし SciPy と `qnm` ではラインサーチ等のヒューリスティクスが一致しないため、最終値/解が異なる場合がある。その場合は **既知解への近さ** と **勾配ノルム**を一次基準にして妥当性を判断する。
-- **L-BFGS**: SciPyの `minimize(method='L-BFGS-B')` は存在するが、`qnm.lbfgs`（boundなし L-BFGS）とは同一実装ではない。よって L-BFGS は以下の二段構えにする。
-  - 一次: 性質テスト（降下方向、Wolfe 充足、既知解への収束）
-  - 二次: 参考比較（例: SciPy L-BFGS-B を bounds 無しで実行した最終値）
-- **L-BFGS-B**: `qnm.lbfgsb` は SciPy の参照実装（`scipy.optimize.fmin_l_bfgs_b`）に委譲するラッパーであり、Evidence では「自前実装の正当性」という観点の一次検証対象から外す（SciPy 側の正当性に依存する）。
+- **BFGS**: Compare primarily with SciPy `minimize(method='BFGS')`. However, since line search heuristics differ between SciPy and `qnm`, final values/solutions may differ. In such cases, judge validity using **proximity to known solutions** and **gradient norm** as primary criteria.
+- **L-BFGS**: SciPy's `minimize(method='L-BFGS-B')` exists, but it is not the same implementation as `qnm.lbfgs` (bound-free L-BFGS). Therefore, use a two-tier approach for L-BFGS:
+  - Primary: Property tests (descent direction, Wolfe satisfaction, convergence to known solutions)
+  - Secondary: Reference comparison (e.g., final value from running SciPy L-BFGS-B without bounds)
+- **L-BFGS-B**: `qnm.lbfgsb` is a wrapper that delegates to SciPy's reference implementation (`scipy.optimize.fmin_l_bfgs_b`), so it is excluded from primary verification of "correctness of self-implementation" in Evidence (depends on SciPy's correctness).
 
-## 4. Evidence Status（合否定義）
+## 4. Evidence Status (Pass/Fail Definition)
 
-Status は「この検証が何を主張できるか」を表す。
+Status indicates "what this verification can claim."
 
-- `PASSED`: solverが `success=True` で終了し、一次基準（例: 既知解への近さ/勾配ノルム/性質テスト）を満たす。
-- `ACCEPTABLE_DIFF`: solver自体は一次基準を満たすが、参照実装（例: SciPy）と結果が大きく異なる。差分の原因（例: 局所解、line search差）を脚注で説明できる。
-- `FAILED`: `success=False`、または一次基準を満たさない。
+- `PASSED`: Solver terminates with `success=True` and satisfies primary criteria (e.g., proximity to known solutions/gradient norm/property tests).
+- `ACCEPTABLE_DIFF`: Solver itself satisfies primary criteria but results differ significantly from reference implementation (e.g., SciPy). The cause of the difference (e.g., local solution, line search differences) can be explained in footnotes.
+- `FAILED`: `success=False`, or does not satisfy primary criteria.
 
-## 5. 再現性
+## 5. Reproducibility
 
-- 壁時計時間は環境依存が大きいため補助指標とする。
-- 実行環境（Python/SciPy/NumPyのバージョン）は Evidence に出力して併記する。
+- Wall-clock time is highly environment-dependent, so it is used as an auxiliary metric.
+- Execution environment (Python/SciPy/NumPy versions) is output and included in Evidence.

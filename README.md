@@ -1,25 +1,25 @@
 # quasi-newton-methods
 
-準ニュートン法（BFGS / L-BFGS / L-BFGS-B）の **Evidence-first** な実装と検証をまとめたリポジトリです。
+An **Evidence-first** implementation and verification repository for quasi-Newton methods (BFGS / L-BFGS / L-BFGS-B).
 
-標準的な教科書（Nocedal & Wright）とコードの対応を明確にし、参照実装（主に SciPy）との比較を通じて「なぜこの実装でよいのか」を説明できる状態を目指します。
+This repository aims to clearly map standard textbook algorithms (Nocedal & Wright) to code, and to explain "why this implementation is correct" through comparisons with reference implementations (primarily SciPy).
 
-補足:
+Note:
 
-- **L-BFGS-B** は `qnm.lbfgsb` として提供していますが、これは **SciPy の参照実装に委譲するラッパー**です（core 実装の検証とは別扱いです）。
+- **L-BFGS-B** is provided as `qnm.lbfgsb`, but this is a **wrapper that delegates to SciPy's reference implementation** (separate from core implementation verification).
 
-## 初見の人へ（まず読む場所）
+## For First-Time Visitors (Where to Start)
 
-このプロジェクトは、単に実装を提供するだけでなく、「正しく動いているか」「なぜその実装なのか」という根拠を重視しています。
+This project emphasizes not just providing implementations, but also the evidence for "whether it works correctly" and "why this implementation approach was chosen."
 
-- [**理論 (Theory)**](./docs/theory/concepts.md): Nocedal & Wright のアルゴリズムとコードの対応（Two-loop recursion の図解あり）。
-- [**検証 (Evidence)**](./docs/evidence/baseline_results.md): SciPy との比較結果と、合否の考え方。
-- [**出典 (References)**](./docs/references/papers.md): 論文・教科書などの一次情報。
+- [**Theory**](./docs/theory/concepts.md): Correspondence between Nocedal & Wright algorithms and code (includes diagrams of Two-loop recursion).
+- [**Evidence**](./docs/evidence/baseline_results.md): Comparison results with SciPy and the criteria for pass/fail.
+- [**References**](./docs/references/papers.md): Primary sources such as papers and textbooks.
 
-## このプロジェクトの方針
-- **アルゴリズムの透明性**: Nocedal & Wright のアルゴリズム（BFGS: Alg 6.1 / L-BFGS: Alg 7.4）とコードを対応づけます。
-- **Evidence-first**: 「参照実装との完全一致」ではなく、理論上の性質と差分の説明可能性を重視します。
-- **実装者向け**: 手法を “使う” だけでなく “実装する” ための最短距離を意識します。
+## Project Philosophy
+- **Algorithm Transparency**: Maps Nocedal & Wright algorithms (BFGS: Alg 6.1 / L-BFGS: Alg 7.4) to code.
+- **Evidence-first**: Emphasizes theoretical properties and explainability of differences rather than "exact match with reference implementations."
+- **For Implementers**: Designed for the shortest path to "implementing" methods, not just "using" them.
 
 ## Verification Status (Jan 6, 2026)
 | Method | Verification | Status |
@@ -28,24 +28,24 @@
 | **L-BFGS** | Nocedal & Wright (2006) Alg 7.4 | [PASSED](./docs/evidence/baseline_results.md) |
 | **Line Search** | Strong Wolfe (Alg 3.5/3.6) | [PASSED](./docs/evidence/baseline_results.md) |
 
-## クイックスタート
+## Quick Start
 
-### 1. インストール
+### 1. Installation
 ```bash
 python -m venv .venv
 # Windows: .\.venv\Scripts\Activate.ps1 | macOS/Linux: source .venv/bin/activate
 pip install -e ./src/python[dev]
 ```
 
-### 2. 実装の正当性検証（Fact-check）
+### 2. Implementation Verification (Fact-check)
 
-自動検証スクリプトを実行して、SciPy などとの比較を行います。
+Run the automated verification script to compare with SciPy and other implementations.
 
 ```bash
 python src/python/scripts/verify_implementation.py
 ```
 
-編集インストールを使わずに実行する場合は、`PYTHONPATH` を設定してください。
+If running without editable installation, set `PYTHONPATH`:
 
 ```bash
 # macOS/Linux (bash/zsh) / Git Bash
@@ -65,7 +65,7 @@ set PYTHONPATH=src/python
 python src/python/scripts/verify_implementation.py
 ```
 
-### 3. 使用例
+### 3. Usage Example
 
 ```python
 from qnm import bfgs, rosenbrock_problem
@@ -77,12 +77,12 @@ print(f"Optimal x: {result.x}")
 print(f"Objective value: {result.fun}")
 ```
 
-## ドキュメント構成
-- [**理論 (Theory)**](./docs/theory/concepts.md): 数学的背景とコードへの対応。
-- [**検証 (Evidence)**](./docs/evidence/baseline_results.md): 比較結果と検証ログ。
-- [**出典 (References)**](./docs/references/papers.md): 論文・教科書などの一覧。
+## Documentation Structure
+- [**Theory**](./docs/theory/concepts.md): Mathematical background and correspondence to code.
+- [**Evidence**](./docs/evidence/baseline_results.md): Comparison results and verification logs.
+- [**References**](./docs/references/papers.md): List of papers, textbooks, etc.
 
-## ディレクトリ構成
+## Directory Structure
 - `src/python/qnm/`: Core implementations (BFGS, L-BFGS, Line Search).
 - `src/python/scripts/`: Verification and benchmarking scripts.
 - `docs/`: Narrative documentation and evidence.

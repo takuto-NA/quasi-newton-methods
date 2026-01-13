@@ -1,180 +1,180 @@
-# L-BFGS (Limited-memory BFGS) 解説
+# L-BFGS (Limited-memory BFGS) Explanation
 
-L-BFGS は、準ニュートン法の標準である BFGS 法を **大規模な無制約最適化問題**（変数が数千〜数百万）に適用できるよう改良したアルゴリズムです。
+L-BFGS is an algorithm that adapts BFGS, the standard quasi-Newton method, for **large-scale unconstrained optimization problems** (with thousands to millions of variables).
 
-BFGS が $n \times n$ の巨大な逆ヘッセ近似行列 $H_k$ を保持・更新するのに対し、L-BFGS は直近 $m$ 回の履歴情報のみを利用し、行列を生成することなく探索方向 $p_k$ を計算します。これにより、メモリ使用量と計算量を劇的に削減します。
+While BFGS maintains and updates a huge $n \times n$ inverse Hessian approximation matrix $H_k$, L-BFGS uses only the most recent $m$ steps of history information and computes the search direction $p_k$ without generating a matrix. This dramatically reduces memory usage and computational cost.
 
-## 1. 背景：なぜ "Limited-memory" なのか
+## 1. Background: Why "Limited-memory"?
 
-変数次元 $n$ が大きい場合、BFGS のボトルネックは「メモリ」と「行列演算」の両方にあります。
+When the variable dimension $n$ is large, BFGS faces bottlenecks in both "memory" and "matrix operations."
 
-* **メモリ**: $n = 10000$ の場合、$H_k$ を保持するだけで $10^8$ 要素（約 800MB）を消費します。$n = 100000$ なら 80GB になり、現実的ではありません。
-* **計算**: $H_k$ 行列とベクトルの積は $O(n^2)$ の計算量を要します。
+* **Memory**: For $n = 10000$, storing $H_k$ alone consumes $10^8$ elements (approximately 800MB). For $n = 100000$, this becomes 80GB, which is impractical.
+* **Computation**: Matrix-vector products with $H_k$ require $O(n^2)$ computational complexity.
 
-L-BFGS は、逆ヘッセ行列 $H_k$ を**陽に（Explicitly）構成しません**。代わりに、過去 $m$ ステップ分の「変化の履歴」だけを保存し、必要なときに「あたかも $H_k$ があるかのように」演算を行います。
+L-BFGS **does not explicitly construct** the inverse Hessian matrix $H_k$. Instead, it stores only the "history of changes" from the past $m$ steps and performs operations "as if $H_k$ exists" when needed.
 
-### BFGS vs L-BFGS 比較表
+### BFGS vs L-BFGS Comparison Table
 
-| 項目 | BFGS (Full-memory) | L-BFGS (Limited-memory) |
+| Aspect | BFGS (Full-memory) | L-BFGS (Limited-memory) |
 | --- | --- | --- |
-| **保持する情報** | $H_k$ 行列 ($n \times n$) | 直近 $m$ 個のベクトルペア $(s_i, y_i)$ |
-| **メモリ使用量** | $O(n^2)$ | $O(mn)$ （$m \ll n$、典型的には $m=5 \sim 20$） |
-| **1反復の計算量** | $O(n^2)$ | $O(mn)$ |
-| **行列演算** | 必須（行列ベクトル積・外積） | **なし**（ベクトル内積・和のみ） |
-| **探索方向の計算** | $p_k = -H_k g_k$ | **Two-loop recursion** アルゴリズム |
-| **過去情報の扱い** | 全履歴を $H_k$ に不可逆圧縮 | 直近 $m$ 個を生データで保持（古いものは破棄） |
-| **適用規模** | 小〜中規模（$n \lesssim 1000$） | 大規模（$n \gtrsim 10000$） |
+| **Information Stored** | $H_k$ matrix ($n \times n$) | Most recent $m$ vector pairs $(s_i, y_i)$ |
+| **Memory Usage** | $O(n^2)$ | $O(mn)$ ($m \ll n$, typically $m=5 \sim 20$) |
+| **Computation per Iteration** | $O(n^2)$ | $O(mn)$ |
+| **Matrix Operations** | Required (matrix-vector products, outer products) | **None** (only vector inner products and sums) |
+| **Search Direction Computation** | $p_k = -H_k g_k$ | **Two-loop recursion** algorithm |
+| **Treatment of Past Information** | All history irreversibly compressed into $H_k$ | Most recent $m$ pairs kept as raw data (older ones discarded) |
+| **Applicable Scale** | Small to medium ($n \lesssim 1000$) | Large scale ($n \gtrsim 10000$) |
 
 ---
 
-### 1.1 メモリ削減の核心：行列を作らずベクトルで済ませる
+### 1.1 Core of Memory Reduction: Using Vectors Instead of Matrices
 
-**Q: $m$ 個の履歴を使うなら、計算に $O(mn^2)$ かかるのでは？**
+**Q: If using $m$ history pairs, wouldn't computation take $O(mn^2)$?**
 
-**A: いいえ、行列演算を一切行わないため $O(mn)$ で済みます。**
-L-BFGS が保持するのは以下のベクトルペアだけです。
+**A: No, it takes only $O(mn)$ because no matrix operations are performed.**
+L-BFGS stores only the following vector pairs:
 
-* $s_i = x_{i+1} - x_i$ （変数の変位）
-* $y_i = g_{i+1} - g_i$ （勾配の変位）
+* $s_i = x_{i+1} - x_i$ (variable displacement)
+* $y_i = g_{i+1} - g_i$ (gradient displacement)
 
-これらは共に $n$ 次元ベクトルです。$m$ 個の履歴ペアを保持しても、メモリ量は $2mn$ 要素分です。
-例えば $n = 10000, m = 10$ の場合、BFGS が $10^8$ 要素を要するのに対し、L-BFGS は $2 \times 10^5$ 要素で済みます（**500倍の節約**）。
+Both are $n$-dimensional vectors. Even storing $m$ history pairs requires only $2mn$ elements of memory.
+For example, with $n = 10000, m = 10$, while BFGS requires $10^8$ elements, L-BFGS needs only $2 \times 10^5$ elements (**500x reduction**).
 
-**Q: なぜ BFGS は $H_k$ を保持する必要があるのか？**
+**Q: Why does BFGS need to store $H_k$?**
 
-**A: BFGS は「過去すべての情報」を凝縮しているからです。**
-BFGS の $H_k$ は、0ステップ目から現在までの全ての曲率情報を $n \times n$ 行列という形式に「圧縮」して保持しています。これは高精度ですが、一度 $H_k$ に混ぜ込むと個別の履歴は取り出せません（不可逆）。
+**A: Because BFGS compresses "all past information."**
+BFGS's $H_k$ "compresses" all curvature information from step 0 to the present into an $n \times n$ matrix format. While this is highly accurate, once mixed into $H_k$, individual history cannot be extracted (irreversible).
 
-一方、L-BFGS は「**スライディングウィンドウ**」方式です。
+In contrast, L-BFGS uses a **"sliding window"** approach.
 
-1. 直近 $m$ 個の $(s, y)$ ペアだけをリスト（キュー）で持ちます。
-2. 新しいペアが入ると、一番古いペアを捨てます。
-3. $H_k$ という行列は作らず、このリストを使って「行列とベクトルの積」に相当する計算をその都度行います。
-
----
-
-## 2. 実装の前提（記号定義）
-
-この解説および `qnm` ライブラリの実装では以下を前提とします。
-
-* **目的関数**: $f(x)$
-* **勾配**: $g_k = \nabla f(x_k)$
-* **曲率スカラー**: $\rho_i = 1 / (y_i^\top s_i)$
-* **初期近似行列**: $H_k^{(0)} = \gamma_k I$ （単位行列のスカラー倍、反復ごとに更新）
-* **ラインサーチ**: Strong Wolfe 条件を使用（十分な降下と曲率条件 $y_k^\top s_k > 0$ を保証するため）。
+1. Maintain only the most recent $m$ $(s, y)$ pairs in a list (queue).
+2. When a new pair arrives, discard the oldest pair.
+3. Do not create an $H_k$ matrix; instead, perform computations equivalent to "matrix-vector products" on demand using this list.
 
 ---
 
-## 3. 理論的基盤：なぜ L-BFGS はうまくいくのか
+## 2. Implementation Assumptions (Notation)
 
-本節では、L-BFGS が正しく動作する数学的根拠を厳密に証明します。L-BFGS は BFGS の更新式を暗黙的に適用するため、まず BFGS 更新式が満たす性質を確認し、それが L-BFGS にも継承されることを示します。
+This explanation and the `qnm` library implementation assume the following.
 
-### 3.1 セカント条件の満足
+* **Objective function**: $f(x)$
+* **Gradient**: $g_k = \nabla f(x_k)$
+* **Curvature scalar**: $\rho_i = 1 / (y_i^\top s_i)$
+* **Initial approximation matrix**: $H_k^{(0)} = \gamma_k I$ (scalar multiple of identity matrix, updated each iteration)
+* **Line search**: Uses strong Wolfe conditions (to guarantee sufficient decrease and curvature condition $y_k^\top s_k > 0$).
 
-準ニュートン法が Newton 法を近似するためには、逆ヘッセ近似 $H_{k+1}$ が **セカント条件**（secant equation）を満たす必要があります。
+---
 
-> **定義（セカント条件）**
+## 3. Theoretical Foundation: Why L-BFGS Works
+
+This section rigorously proves the mathematical basis for L-BFGS's correct operation. Since L-BFGS implicitly applies BFGS update formulas, we first confirm the properties satisfied by BFGS update formulas and show that they are inherited by L-BFGS.
+
+### 3.1 Satisfaction of Secant Condition
+
+For quasi-Newton methods to approximate Newton's method, the inverse Hessian approximation $H_{k+1}$ must satisfy the **secant condition** (secant equation).
+
+> **Definition (Secant Condition)**
 > $$
 > H_{k+1} y_k = s_k
 > $$
-> ここで $s_k = x_{k+1} - x_k$、$y_k = g_{k+1} - g_k$ である。
+> where $s_k = x_{k+1} - x_k$ and $y_k = g_{k+1} - g_k$.
 
-この条件は、目的関数 $f$ の 2 次 Taylor 展開から自然に導かれます。$f$ が 2 回連続微分可能なとき、
+This condition is naturally derived from the second-order Taylor expansion of the objective function $f$. When $f$ is twice continuously differentiable,
 $$
 g_{k+1} - g_k \approx \nabla^2 f(x_k)(x_{k+1} - x_k)
 $$
-すなわち $y_k \approx B_k s_k$（$B_k = \nabla^2 f(x_k)$）です。逆ヘッセ近似 $H_k \approx B_k^{-1}$ に対しては $H_{k+1} y_k = s_k$ が要求されます。
+i.e., $y_k \approx B_k s_k$ ($B_k = \nabla^2 f(x_k)$). For the inverse Hessian approximation $H_k \approx B_k^{-1}$, $H_{k+1} y_k = s_k$ is required.
 
-> **定理 3.1（BFGS 更新式はセカント条件を満たす）**
+> **Theorem 3.1 (BFGS Update Formula Satisfies Secant Condition)**
 >
-> BFGS 更新式
+> The $H_{k+1}$ satisfying the BFGS update formula
 > $$
 > H_{k+1} = (I - \rho_k s_k y_k^\top) H_k (I - \rho_k y_k s_k^\top) + \rho_k s_k s_k^\top
 > $$
-> （ただし $\rho_k = 1/(y_k^\top s_k)$）を満たす $H_{k+1}$ は、セカント条件 $H_{k+1} y_k = s_k$ を満たす。
+> (where $\rho_k = 1/(y_k^\top s_k)$) satisfies the secant condition $H_{k+1} y_k = s_k$.
 
-**証明**
+**Proof**
 
-$H_{k+1} y_k$ を計算する。まず補助変数を定義する：
+Compute $H_{k+1} y_k$. First, define an auxiliary variable:
 $$
 V_k = I - \rho_k y_k s_k^\top
 $$
 
-このとき BFGS 更新式は
+Then the BFGS update formula can be written as
 $$
 H_{k+1} = V_k^\top H_k V_k + \rho_k s_k s_k^\top
 $$
-と書ける（ここで $V_k^\top = I - \rho_k s_k y_k^\top$）。
+(where $V_k^\top = I - \rho_k s_k y_k^\top$).
 
-$V_k y_k$ を計算すると：
+Computing $V_k y_k$:
 $$
 V_k y_k = (I - \rho_k y_k s_k^\top) y_k = y_k - \rho_k y_k (s_k^\top y_k) = y_k - \rho_k y_k \cdot \frac{1}{\rho_k} = y_k - y_k = 0
 $$
 
-したがって
+Therefore
 $$
 H_{k+1} y_k = V_k^\top H_k (V_k y_k) + \rho_k s_k (s_k^\top y_k) = V_k^\top H_k \cdot 0 + \rho_k s_k \cdot \frac{1}{\rho_k} = s_k
 $$
 
-よって $H_{k+1} y_k = s_k$ が成り立つ。 ∎
+Thus $H_{k+1} y_k = s_k$ holds. ∎
 
-**L-BFGS への適用**: L-BFGS は BFGS 更新式を直近 $m$ 回分だけ再帰的に適用した $H_k$ を暗黙的に構成します。各ステップで上記の定理が成り立つため、L-BFGS の暗黙的 $H_k$ もセカント条件を満たします。
+**Application to L-BFGS**: L-BFGS implicitly constructs $H_k$ by recursively applying the BFGS update formula only for the most recent $m$ steps. Since the above theorem holds at each step, L-BFGS's implicit $H_k$ also satisfies the secant condition.
 
-### 3.2 正定値性の保存
+### 3.2 Preservation of Positive Definiteness
 
-探索方向 $p_k = -H_k g_k$ が降下方向であるためには、$H_k$ が**正定値**である必要があります（$g_k^\top H_k g_k > 0$ ならば $p_k^\top g_k < 0$）。
+For the search direction $p_k = -H_k g_k$ to be a descent direction, $H_k$ must be **positive definite** (if $g_k^\top H_k g_k > 0$, then $p_k^\top g_k < 0$).
 
-> **定理 3.2（BFGS 更新式は正定値性を保存する）**
+> **Theorem 3.2 (BFGS Update Formula Preserves Positive Definiteness)**
 >
-> $H_k$ が正定値であり、曲率条件 $y_k^\top s_k > 0$ が成り立つならば、BFGS 更新式による $H_{k+1}$ も正定値である。
+> If $H_k$ is positive definite and the curvature condition $y_k^\top s_k > 0$ holds, then $H_{k+1}$ from the BFGS update formula is also positive definite.
 
-**証明**
+**Proof**
 
-任意の非零ベクトル $v \in \mathbb{R}^n$ に対し、$v^\top H_{k+1} v > 0$ を示す。
+Show that $v^\top H_{k+1} v > 0$ for any nonzero vector $v \in \mathbb{R}^n$.
 
-BFGS 更新式より
+From the BFGS update formula
 $$
 v^\top H_{k+1} v = v^\top V_k^\top H_k V_k v + \rho_k (v^\top s_k)^2
 $$
 
-ここで $V_k = I - \rho_k y_k s_k^\top$ である。
+where $V_k = I - \rho_k y_k s_k^\top$.
 
-**Case 1**: $V_k v \neq 0$ のとき
+**Case 1**: When $V_k v \neq 0$
 
-$H_k$ が正定値なので $(V_k v)^\top H_k (V_k v) > 0$。また $\rho_k > 0$（曲率条件より）かつ $(v^\top s_k)^2 \geq 0$ なので
+Since $H_k$ is positive definite, $(V_k v)^\top H_k (V_k v) > 0$. Also, $\rho_k > 0$ (from curvature condition) and $(v^\top s_k)^2 \geq 0$, so
 $$
 v^\top H_{k+1} v > 0
 $$
 
-**Case 2**: $V_k v = 0$ のとき
+**Case 2**: When $V_k v = 0$
 
-$V_k v = 0$ は $v = \rho_k (s_k^\top v) y_k$ を意味する。$v \neq 0$ より $s_k^\top v \neq 0$ である（そうでなければ $v = 0$ となり矛盾）。
+$V_k v = 0$ means $v = \rho_k (s_k^\top v) y_k$. Since $v \neq 0$, we have $s_k^\top v \neq 0$ (otherwise $v = 0$, a contradiction).
 
-このとき
+Then
 $$
 v^\top s_k = \rho_k (s_k^\top v)(y_k^\top s_k) = \rho_k (s_k^\top v) \cdot \frac{1}{\rho_k} = s_k^\top v \neq 0
 $$
 
-したがって
+Therefore
 $$
 v^\top H_{k+1} v = 0 + \rho_k (v^\top s_k)^2 = \rho_k (s_k^\top v)^2 > 0
 $$
 
-いずれの場合も $v^\top H_{k+1} v > 0$ が成り立ち、$H_{k+1}$ は正定値である。 ∎
+In either case, $v^\top H_{k+1} v > 0$ holds, so $H_{k+1}$ is positive definite. ∎
 
-**系 3.2.1**: 初期近似 $H_0 = I$（単位行列）は正定値であり、すべてのステップで曲率条件 $y_k^\top s_k > 0$ が満たされるならば、$H_k$ は任意の $k$ で正定値である。
+**Corollary 3.2.1**: The initial approximation $H_0 = I$ (identity matrix) is positive definite, and if the curvature condition $y_k^\top s_k > 0$ is satisfied at all steps, then $H_k$ is positive definite for any $k$.
 
-**L-BFGS への適用**: L-BFGS では $H_k^{(0)} = \gamma_k I$（$\gamma_k > 0$）を用いるため、初期近似は正定値です。各 BFGS 更新ステップで曲率条件が満たされれば、暗黙的に構成される $H_k$ も正定値となります。実装では曲率条件が破れた場合に履歴をクリアし、正定値性を回復させます。
+**Application to L-BFGS**: Since L-BFGS uses $H_k^{(0)} = \gamma_k I$ ($\gamma_k > 0$), the initial approximation is positive definite. If the curvature condition is satisfied at each BFGS update step, the implicitly constructed $H_k$ is also positive definite. In the implementation, when the curvature condition is violated, history is cleared to restore positive definiteness.
 
 ---
 
-## 4. Two-loop Recursion：L-BFGS の心臓部
+## 4. Two-loop Recursion: The Heart of L-BFGS
 
-L-BFGS の最大の特徴は、行列 $H_k$ を作らずに、ベクトル $H_k g_k$ を計算するアルゴリズム **Two-loop recursion** です（Nocedal & Wright, Alg. 7.4）。これにより、探索方向 $p_k = -H_k g_k$ を $O(mn)$ で求めます。
+The key feature of L-BFGS is the **Two-loop recursion** algorithm (Nocedal & Wright, Alg. 7.4) that computes the vector $H_k g_k$ without constructing the matrix $H_k$. This enables computing the search direction $p_k = -H_k g_k$ in $O(mn)$.
 
-### 4.1 アルゴリズムの手順
+### 4.1 Algorithm Procedure
 
-履歴メモリには直近 $m$ 個のペア $(s_i, y_i)$ が保存されているとします。
+Assume the history memory stores the most recent $m$ pairs $(s_i, y_i)$.
 
 ```python
 # python-like pseudocode
@@ -182,20 +182,20 @@ def compute_direction(g_k, history):
     q = g_k.copy()
     alpha = [0] * m
     
-    # 1. Backward Pass (新しい履歴 -> 古い履歴)
-    # 勾配 q を徐々に変形していく
+    # 1. Backward Pass (newest history -> oldest history)
+    # Gradually transform gradient q
     for i in reversed(range(m)):  # m-1, m-2, ..., 0
         s, y, rho = history[i]
         alpha[i] = rho * dot(s, q)
         q = q - alpha[i] * y
 
-    # 2. Initial Scaling (H_k^(0) の適用)
-    # 最も新しい曲率情報を使ってスケールを合わせる
-    # gamma_k = (s_{last}・y_{last}) / (y_{last}・y_{last})
+    # 2. Initial Scaling (apply H_k^(0))
+    # Match scale using the most recent curvature information
+    # gamma_k = (s_{last}^T y_{last}) / (y_{last}^T y_{last})
     r = gamma_k * q
 
-    # 3. Forward Pass (古い履歴 -> 新しい履歴)
-    # 変形した q を元に探索方向 r を復元していく
+    # 3. Forward Pass (oldest history -> newest history)
+    # Restore search direction r from transformed q
     for i in range(m):            # 0, 1, ..., m-1
         s, y, rho = history[i]
         beta = rho * dot(y, r)
@@ -213,96 +213,96 @@ flowchart TD
     YH --> Fwd
 ```
 
-### 4.2 理論的根拠：なぜ two-loop recursion は正しいのか
+### 4.2 Theoretical Basis: Why Two-loop Recursion is Correct
 
-Two-loop recursion が $H_k g_k$ を正しく計算することを証明します。
+We prove that two-loop recursion correctly computes $H_k g_k$.
 
-#### 4.2.1 BFGS 更新式の積形式（Product Form）
+#### 4.2.1 Product Form of BFGS Update Formula
 
-BFGS 更新式を $m$ 回遡って適用すると、$H_k$ は以下の積形式で書けます。
+Applying the BFGS update formula $m$ times backward, $H_k$ can be written in the following product form.
 
-> **補題 4.1（BFGS の積形式）**
+> **Lemma 4.1 (Product Form of BFGS)**
 >
-> $V_i = I - \rho_i y_i s_i^\top$ と定義すると、BFGS 更新を $m$ 回適用した逆ヘッセ近似は
+> Defining $V_i = I - \rho_i y_i s_i^\top$, the inverse Hessian approximation after applying BFGS updates $m$ times is
 > $$
 > H_k = W_m^\top H_k^{(0)} W_m + \sum_{j=0}^{m-1} \rho_{k-m+j} \, W_j^\top s_{k-m+j} s_{k-m+j}^\top W_j
 > $$
-> ここで $W_j = V_{k-m+j} V_{k-m+j+1} \cdots V_{k-1}, \quad W_m = V_{k-m} V_{k-m+1} \cdots V_{k-1}$ （$W_0 = I$ とする）
+> where $W_j = V_{k-m+j} V_{k-m+j+1} \cdots V_{k-1}, \quad W_m = V_{k-m} V_{k-m+1} \cdots V_{k-1}$ ($W_0 = I$)
 
-Two-loop recursion は、この複雑な行列積を $g_k$ に右から順に適用していることと等価です。
+Two-loop recursion is equivalent to applying this complex matrix product to $g_k$ from the right sequentially.
 
-* **Backward pass** は $W_m g_k$ （右側の積）を計算する操作に対応します。
-* **Forward pass** は $W_m^\top H_k^{(0)} W_m g_k$ と履歴項の加算に対応します。
+* **Backward pass** corresponds to computing $W_m g_k$ (the right-side product).
+* **Forward pass** corresponds to $W_m^\top H_k^{(0)} W_m g_k$ and adding history terms.
 
-**証明の詳細**:
-数学的帰納法により、補題 4.1 が成り立つことが示せます。また、各演算がベクトル同士の内積と定数倍加算（AXPY）だけで構成されているため、最終的に $r = H_k g_k$ が得られます（詳細は Nocedal & Wright, Chapter 7 参照）。
+**Proof Details**:
+Mathematical induction shows that Lemma 4.1 holds. Also, since each operation consists only of vector inner products and constant multiple additions (AXPY), we ultimately obtain $r = H_k g_k$ (see Nocedal & Wright, Chapter 7 for details).
 
-### 4.3 計算量とメモリの詳細
+### 4.3 Computational Complexity and Memory Details
 
-**メモリ使用量**:
-* 履歴保持: $m$ 個の $(s_i, y_i)$ ペア → $2mn$ 要素 = $O(mn)$
-* 作業用変数: $q, r$ （各 $n$ 次元）、$\alpha$ 配列（$m$ 個） → $O(n + m)$
-* **合計**: $O(mn)$
-* **重要**: 行列演算を一切行わないため、行列をメモリに展開しません。
+**Memory Usage**:
+* History storage: $m$ pairs of $(s_i, y_i)$ → $2mn$ elements = $O(mn)$
+* Working variables: $q, r$ (each $n$-dimensional), $\alpha$ array ($m$ elements) → $O(n + m)$
+* **Total**: $O(mn)$
+* **Important**: No matrix operations are performed, so matrices are not expanded in memory.
 
-**時間計算量**:
-* **Backward pass**: $m$ 回のループで各 $O(n)$ → $O(mn)$
+**Time Complexity**:
+* **Backward pass**: $m$ iterations, each $O(n)$ → $O(mn)$
 * **Initial scaling**: $O(n)$
-* **Forward pass**: $m$ 回のループで各 $O(n)$ → $O(mn)$
-* **合計**: $O(mn)$
+* **Forward pass**: $m$ iterations, each $O(n)$ → $O(mn)$
+* **Total**: $O(mn)$
 
-この「行列を作らずにベクトル積だけで済ませる」技法が、L-BFGS のメモリ・計算量削減の核心です。
+This technique of "using only vector products without creating matrices" is the core of L-BFGS's memory and computational complexity reduction.
 
 ---
 
-## 5. スケーリング係数 $\gamma_k$ の重要性
+## 5. Importance of Scaling Coefficient $\gamma_k$
 
-Two-loop の中間で $r = \gamma_k q$ とするスケーリングは、L-BFGS の性能において極めて重要です。代表的に以下の $\gamma_k$ を用います。
+The scaling $r = \gamma_k q$ in the middle of the two-loop is extremely important for L-BFGS performance. Typically, the following $\gamma_k$ is used:
 $$
 \gamma_k = \frac{s_{k-1}^\top y_{k-1}}{y_{k-1}^\top y_{k-1}}
 $$
 
-**物理的な意味**:
-これは最新のステップにおける「ヘッセ行列の固有値の逆数」の近似値です。Rayleigh 商の変形として、最新の曲率情報を反映しています。
-BFGS では $H_k$ が全履歴を持って「正しいスケール」を学習し続けますが、L-BFGS は記憶が短いため、毎回 $H_k^{(0)} = I$ から始めるとスケール（単位系）が合いません。
-$\gamma_k$ を導入することで、**初期ステップ幅 $\alpha \approx 1$ が最適に近くなる**ように補正され、ラインサーチの失敗や無駄な反復を防ぎます。
+**Physical Meaning**:
+This is an approximation of the "inverse of Hessian matrix eigenvalues" at the most recent step. As a variant of the Rayleigh quotient, it reflects the most recent curvature information.
+While BFGS's $H_k$ continuously learns the "correct scale" by holding all history, L-BFGS has limited memory, so starting from $H_k^{(0)} = I$ each time would mismatch the scale (unit system).
+By introducing $\gamma_k$, **the initial step size $\alpha \approx 1$ becomes close to optimal**, preventing line search failures and wasteful iterations.
 
 ---
 
-## 6. 収束性の理論保証
+## 6. Theoretical Convergence Guarantees
 
-L-BFGS は計算を省略していますが、数学的には堅牢な収束性が保証されています。
+Although L-BFGS omits computations, it has mathematically robust convergence guarantees.
 
-### 6.1 大域的収束性 (Global Convergence)
+### 6.1 Global Convergence
 
-> **定理 6.1（大域収束）**
+> **Theorem 6.1 (Global Convergence)**
 >
-> 以下の条件を満たすとき、L-BFGS は大域収束する：
-> 1. $f$ は下に有界
-> 2. $\nabla f$ はリプシッツ連続
-> 3. Wolfe 条件を満たすラインサーチを使用
+> L-BFGS converges globally when the following conditions are satisfied:
+> 1. $f$ is bounded below
+> 2. $\nabla f$ is Lipschitz continuous
+> 3. Use line search satisfying Wolfe conditions
 >
-> このとき、$\lim_{k \to \infty} \inf \|\nabla f(x_k)\| = 0$ が成り立つ。
+> Then, $\lim_{k \to \infty} \inf \|\nabla f(x_k)\| = 0$ holds.
 
-**根拠**: Two-loop で生成される方向 $p_k$ が常に降下方向であり、かつ $H_k$ の固有値が（履歴の有限性により）適切に有界に保たれるため、Zoutendijk の条件を満たします。
+**Basis**: The direction $p_k$ generated by the two-loop is always a descent direction, and the eigenvalues of $H_k$ are appropriately bounded (due to finiteness of history), satisfying Zoutendijk's condition.
 
-### 6.2 線形収束 (Linear Convergence)
+### 6.2 Linear Convergence
 
-> **定理 6.2（強凸関数に対する線形収束）**
+> **Theorem 6.2 (Linear Convergence for Strongly Convex Functions)**
 >
-> 強凸関数に対して、Wolfe 条件を満たすラインサーチを用いる L-BFGS は線形収束（R-linear convergence）する。
+> For strongly convex functions, L-BFGS using line search satisfying Wolfe conditions converges linearly (R-linear convergence).
 
-BFGS の「超一次収束」には劣りますが、$m$ を増やすことで収束率は向上します。実用上、計算コストの低さが反復回数の増加を補って余りあるパフォーマンスを発揮します。
+Although inferior to BFGS's "superlinear convergence," increasing $m$ improves the convergence rate. In practice, the low computational cost more than compensates for the increased number of iterations.
 
 ---
 
-## 7. 実装上の安全策（Safeguards）
+## 7. Implementation Safeguards
 
-実際のコード（`qnm.lbfgs`）では、数値的不安定性に対処するために以下のガードを入れています。
+The actual code (`qnm.lbfgs`) includes the following guards to handle numerical instability.
 
-1. **履歴の自動破棄**: `collections.deque(maxlen=m)` を使い、メモリ管理を自動化しています。
-2. **降下方向の保証**: 計算された $p_k$ が降下方向でない場合（$p_k^\top g_k \ge 0$）、履歴をクリアして最急降下法（$p_k = -g_k$）にリセットします。
-3. **異常な曲率の検知**: $y_k^\top s_k$ が極端に小さい（$10^{-12}$ 以下）場合、その履歴ペアは信頼できないため保存せず、履歴をリセットして $H_k$ の正定値性を守ります。
+1. **Automatic History Discard**: Uses `collections.deque(maxlen=m)` to automate memory management.
+2. **Descent Direction Guarantee**: If the computed $p_k$ is not a descent direction ($p_k^\top g_k \ge 0$), clear history and reset to steepest descent ($p_k = -g_k$).
+3. **Abnormal Curvature Detection**: When $y_k^\top s_k$ is extremely small (below $10^{-12}$), that history pair is unreliable, so it is not saved, and history is reset to preserve $H_k$'s positive definiteness.
 
 ```mermaid
 flowchart TD
@@ -321,33 +321,33 @@ flowchart TD
 
 ---
 
-## 8. まとめ：いつ L-BFGS を使うべきか
+## 8. Summary: When to Use L-BFGS
 
-L-BFGS は、**現代の機械学習や大規模最適化における「第一選択肢」**のひとつです。
+L-BFGS is one of the **"first choices"** in modern machine learning and large-scale optimization.
 
-| 状況 | 推奨 | 理由 |
+| Situation | Recommendation | Reason |
 | --- | --- | --- |
-| **変数が少ない** ($n \leq 1000$) | BFGS | 少ない反復回数で超高精度に収束するため。 |
-| **変数が多い** ($n \geq 10000$) | **L-BFGS** | BFGS はメモリ・計算時間的に不利、または実行不可能。 |
-| **深層学習** | **L-BFGS** / Adam | 全バッチ学習が可能なら L-BFGS は強力。SGD系よりパラメータ調整が楽。 |
-| **メモリ制約が厳しい** | **L-BFGS** | メモリ使用量を $O(mn)$ でコントロールできるため。 |
+| **Few variables** ($n \leq 1000$) | BFGS | Converges to very high accuracy with few iterations. |
+| **Many variables** ($n \geq 10000$) | **L-BFGS** | BFGS is disadvantageous or infeasible in memory/computation time. |
+| **Deep learning** | **L-BFGS** / Adam | L-BFGS is powerful if full-batch learning is possible. Easier parameter tuning than SGD-based methods. |
+| **Strict memory constraints** | **L-BFGS** | Can control memory usage to $O(mn)$. |
 
-このように、L-BFGS は「限られたリソースで、ヘッセ行列の威力を最大限に借りる」ための非常に賢いアルゴリズムです。
+Thus, L-BFGS is a very clever algorithm for "maximizing the power of the Hessian matrix with limited resources."
 
 ---
 
-## 9. インタラクティブ・デモ
+## 9. Interactive Demo
 
-ブラウザ上で実際の実装（`qnm.lbfgs`）を実行し、履歴バッファ（$s_k, y_k$）が更新される様子を確認できます。
+You can run the actual implementation (`qnm.lbfgs`) in your browser and observe how the history buffer ($s_k, y_k$) is updated.
 
 <ClientOnly>
   <OptimizerVisualizer algorithm="lbfgs" problemType="rosenbrock" :dim="2" />
 </ClientOnly>
 
-## 10. 参考文献
+## 10. References
 
 - Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization* (2nd ed.). Springer. (Chapter 7)
 - Liu, D. C., & Nocedal, J. (1989). "[On the limited memory BFGS method for large scale optimization](https://link.springer.com/article/10.1007/BF01589116)". *Mathematical Programming*, 45(1-3), 503-528.
 - Dennis, J. E., & Moré, J. J. (1977). "Quasi-Newton methods, motivation and theory". *SIAM Review*, 19(1), 46-89.
 - Zoutendijk, G. (1970). "Nonlinear programming, computational methods". In *Integer and Nonlinear Programming* (pp. 37-86). North-Holland.
-- [Grokipedia: Limited-memory BFGS](https://grokipedia.com/page/Limited-memory_BFGS) - L-BFGS の概要と実装に関する情報
+- [Grokipedia: Limited-memory BFGS](https://grokipedia.com/page/Limited-memory_BFGS) - Overview and implementation information on L-BFGS

@@ -1,68 +1,70 @@
 # BFGS (Broyden-Fletcher-Goldfarb-Shanno)
 
-BFGS 法は、準ニュートン法（Quasi-Newton methods）の中で最も広く使われているアルゴリズムの一つです。ニュートン法がヘッセ行列 $\nabla^2 f(x)$ を直接計算し、その逆行列を求めるのに対し、BFGS 法は勾配情報を用いてヘッセ行列の逆行列の近似 $H_k$ を効率的に更新します。
+BFGS is one of the most widely used algorithms among quasi-Newton methods. While Newton's method directly computes the Hessian matrix $\nabla^2 f(x)$ and finds its inverse, BFGS efficiently updates an approximation $H_k$ of the inverse Hessian matrix using gradient information.
 
-## 1. 基本原理
+## 1. Basic Principles
 
-ニュートン法における更新ステップは $p_k = -(\nabla^2 f(x_k))^{-1} \nabla f(x_k)$ ですが、BFGS ではこれを $p_k = -H_k \nabla f(x_k)$ と近似します。
+The update step in Newton's method is $p_k = -(\nabla^2 f(x_k))^{-1} \nabla f(x_k)$, but BFGS approximates this as $p_k = -H_k \nabla f(x_k)$.
 
-### セカント条件 (Secant Equation)
-新しい近似行列 $H_{k+1}$ は、直近の勾配の変化を正しく反映するために次の**セカント条件**を満たす必要があります。
+### Secant Equation
+
+The new approximate matrix $H_{k+1}$ must satisfy the following **secant condition** to correctly reflect recent gradient changes.
 
 $$H_{k+1} y_k = s_k$$
 
-ここで、
-- $s_k = x_{k+1} - x_k$ （変位）
-- $y_k = \nabla f_{k+1} - \nabla f_k$ （勾配の変化）
+where,
+- $s_k = x_{k+1} - x_k$ (displacement)
+- $y_k = \nabla f_{k+1} - \nabla f_k$ (gradient change)
 
-### 更新式
-Nocedal & Wright (2006) の Eq. 6.17 に基づく、逆ヘッセ行列近似 $H$ の更新式は以下の通りです。
+### Update Formula
+
+Based on Eq. 6.17 of Nocedal & Wright (2006), the update formula for the inverse Hessian approximation $H$ is as follows.
 
 $$H_{k+1} = (I - \rho_k s_k y_k^T) H_k (I - \rho_k y_k s_k^T) + \rho_k s_k s_k^T$$
 
-ただし、$\rho_k = \frac{1}{y_k^T s_k}$ です。この式により、$H_k$ が正定値（Positive Definite）であれば、更新後の $H_{k+1}$ も正定値性が維持されます。
+where $\rho_k = \frac{1}{y_k^T s_k}$. This formula ensures that if $H_k$ is positive definite, the updated $H_{k+1}$ also maintains positive definiteness.
 
-## 2. 曲率条件 (Curvature Condition)
+## 2. Curvature Condition
 
-$H_{k+1}$ が正定値であるためには、分母の $\rho_k$ が定義可能であること、すなわち以下の**曲率条件**を満たす必要があります。
+For $H_{k+1}$ to be positive definite, the denominator $\rho_k$ must be well-defined, i.e., the following **curvature condition** must be satisfied.
 
 $$s_k^T y_k > 0$$
 
-実用上、この条件はラインサーチにおいて**強 Wolfe 条件（Strong Wolfe conditions）**を課すことで保証されます。
+In practice, this condition is guaranteed by imposing **strong Wolfe conditions** in line search.
 
-## 3. アルゴリズムの流れ
+## 3. Algorithm Flow
 
-`qnm.bfgs` で実装されている手順は以下の通りです。
+The procedure implemented in `qnm.bfgs` is as follows.
 
 ```mermaid
 flowchart TD
-    Start(["開始"]) --> Init["初期化: x_0, H_0 = I"]
-    Init --> Loop{"収束判定: ||grad|| < tol?"}
-    Loop -- Yes --> End(["終了"])
-    Loop -- No --> SearchDir["探索方向の決定: p_k = -H_k grad_k"]
-    SearchDir --> LineSearch["ラインサーチ: 強 Wolfe 条件を満たす alpha を決定"]
-    LineSearch --> UpdateX["変数の更新: x_k+1 = x_k + alpha * p_k"]
-    UpdateX --> CalcGrad["新しい勾配 grad_k+1 の計算"]
-    CalcGrad --> CheckCurvature{"曲率条件 s^T y > 1e-12?"}
-    CheckCurvature -- Yes --> UpdateH["BFGS更新式による H_k+1 の計算"]
-    CheckCurvature -- No --> ResetH["H_k+1 = I にリセット"]
+    Start(["Start"]) --> Init["Initialize: x_0, H_0 = I"]
+    Init --> Loop{"Convergence check: ||grad|| < tol?"}
+    Loop -- Yes --> End(["End"])
+    Loop -- No --> SearchDir["Determine search direction: p_k = -H_k grad_k"]
+    SearchDir --> LineSearch["Line search: determine alpha satisfying strong Wolfe conditions"]
+    LineSearch --> UpdateX["Update variables: x_k+1 = x_k + alpha * p_k"]
+    UpdateX --> CalcGrad["Compute new gradient grad_k+1"]
+    CalcGrad --> CheckCurvature{"Curvature condition s^T y > 1e-12?"}
+    CheckCurvature -- Yes --> UpdateH["Compute H_k+1 using BFGS update formula"]
+    CheckCurvature -- No --> ResetH["Reset H_k+1 = I"]
     UpdateH --> Loop
     ResetH --> Loop
 ```
 
-## 4. 実装のポイント (`qnm.bfgs`)
+## 4. Implementation Points (`qnm.bfgs`)
 
-- **正定値性の維持**: 曲率が失われた場合（$s_k^T y_k \le 10^{-12}$）、数値的安定性のために近似行列を単位行列にリセットします。これは SciPy や CppNumericalSolvers 等の主要な実装でも採用されている一般的な安全策です。
-- **計算効率**: 更新式は外積（`np.outer`）と行列積で構成されており、行列の逆計算（$O(n^3)$）を避け、$O(n^2)$ の計算量で更新が可能です。
-- **初期近似**: 初期値 $H_0$ は単位行列 $I$ とします。SciPy BFGS 等と同様の設計です。
+- **Maintaining Positive Definiteness**: When curvature is lost ($s_k^T y_k \le 10^{-12}$), the approximate matrix is reset to the identity matrix for numerical stability. This is a common safeguard adopted in major implementations such as SciPy and CppNumericalSolvers.
+- **Computational Efficiency**: The update formula consists of outer products (`np.outer`) and matrix products, avoiding matrix inversion ($O(n^3)$) and enabling updates in $O(n^2)$ complexity.
+- **Initial Approximation**: The initial value $H_0$ is set to the identity matrix $I$, consistent with designs like SciPy BFGS.
 
-## 5. インタラクティブ・デモ
+## 5. Interactive Demo
 
-ブラウザ上で実際の実装（`qnm.bfgs`）を実行し、近似逆ヘッセ行列 $H$ が更新される様子を確認できます。
+You can run the actual implementation (`qnm.bfgs`) in your browser and observe how the approximate inverse Hessian matrix $H$ is updated.
 
 <ClientOnly>
   <OptimizerVisualizer algorithm="bfgs" problemType="rosenbrock" :dim="2" />
 </ClientOnly>
 
-## 6. 参考文献
+## 6. References
 - Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization*. Springer. (Chapter 6)

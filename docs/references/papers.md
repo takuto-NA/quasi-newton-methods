@@ -1,16 +1,16 @@
-# 論文・教科書（Papers & Books）
+# Papers & Books
 
-本リポジトリの理論的な一次参照（primary reference）と、周辺の重要文献です。
+Primary theoretical references for this repository and important related literature.
 
-## 教科書（Key Textbook）
+## Key Textbook
 - **Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization* (2nd ed.). Springer.**
-  - 本実装の一次参照
+  - Primary reference for this implementation
   - BFGS: Chapter 6
   - L-BFGS: Chapter 7
   - Line Search: Chapter 3
 
-## BFGS（1970年の独立発見）
-BFGS は 1970 年に 4 名の研究者により独立に提案されました。
+## BFGS (Independent Discovery in 1970)
+BFGS was independently proposed by four researchers in 1970.
 
 - **Broyden, C. G.** (1970). "The Convergence of a Class of Double-rank Minimization Algorithms". *Journal of the Institute of Mathematics and Its Applications*.
 - **Fletcher, R.** (1970). "A New Approach to Variable Metric Algorithms". *Computer Journal*.
@@ -19,8 +19,8 @@ BFGS は 1970 年に 4 名の研究者により独立に提案されました。
 
 ## L-BFGS
 - **Liu, D. C., & Nocedal, J.** (1989). "On the limited memory BFGS method for large scale optimization". *Mathematical Programming*.
-  - L-BFGS と two-loop recursion の基礎論文
+  - Foundational paper on L-BFGS and two-loop recursion
 
 ## L-BFGS-B
 - **Byrd, R. H., Lu, P., Nocedal, J., & Zhu, C.** (1995). "A Limited Memory Algorithm for Bound Constrained Optimization". *SIAM Journal on Scientific and Statistical Computing*.
-  - 実装（元祖 Fortran の配布元）: [Nocedal の L-BFGS-B 配布ページ](http://users.iems.northwestern.edu/~nocedal/lbfgsb.html)
+  - Original Fortran distribution: [Nocedal's L-BFGS-B Distribution Page](http://users.iems.northwestern.edu/~nocedal/lbfgsb.html)

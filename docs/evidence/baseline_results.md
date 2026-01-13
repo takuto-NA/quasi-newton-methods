@@ -1,39 +1,39 @@
-# ベースライン検証結果（Baseline Results）
+# Baseline Verification Results
 
-`qnm` のベースライン検証結果です。
+Baseline verification results for `qnm`.
 
-- 生成日: 2026-01-06
-- 生成手順: `PYTHONPATH=src/python python src/python/scripts/verify_implementation.py`
+- Generated: 2026-01-06
+- Generation procedure: `PYTHONPATH=src/python python src/python/scripts/verify_implementation.py`
 
-合否の定義（`PASSED` / `ACCEPTABLE_DIFF` / `FAILED`）や、比較の一次/二次の扱いは [methodology](/evidence/methodology) を参照してください。
+For definitions of pass/fail (`PASSED` / `ACCEPTABLE_DIFF` / `FAILED`) and treatment of primary/secondary comparisons, see [methodology](/evidence/methodology).
 
-## 再現性（Environment）
+## Reproducibility (Environment)
 
-このページの数値は、以下の環境で生成しました。
+The numerical values on this page were generated in the following environment.
 
 - Python: 3.12.10
 - Platform: Windows-11-10.0.26200-SP0
 - NumPy: 2.2.6
 - SciPy: 1.14.1
 
-## 表の見方
+## How to Read the Table
 
-- `‖∇f‖∞`: 勾配の無限大ノルム（停止条件に使用）
-- `Iters`: 反復回数（`n_iter`）
-- `Func evals`: 目的関数評価回数（`n_fun`）
-- `f_diff (SciPy)`: SciPy 参照実装との最終目的関数値の差（**補助指標**）
+- `‖∇f‖∞`: Infinity norm of gradient (used for stopping condition)
+- `Iters`: Number of iterations (`n_iter`)
+- `Func evals`: Number of objective function evaluations (`n_fun`)
+- `f_diff (SciPy)`: Difference in final objective function value from SciPy reference implementation (**auxiliary metric**)
 
-`f_diff (SciPy)` について:
+Regarding `f_diff (SciPy)`:
 
-- **BFGS**: SciPy `minimize(method='BFGS')` との差（参照比較）
-- **L-BFGS**: SciPy `minimize(method='L-BFGS-B')`（bounds無し）との差（**情報用**。一次の合否基準ではない）
+- **BFGS**: Difference from SciPy `minimize(method='BFGS')` (reference comparison)
+- **L-BFGS**: Difference from SciPy `minimize(method='L-BFGS-B')` (without bounds) (**informational**. Not a primary pass/fail criterion)
 
-目安（直感的な解釈）:
+Guidelines (intuitive interpretation):
 
-- `f_diff <= 1e-6` であれば、概ね同一の解に収束したとみなせます
-- `f_diff >= 1e-0` のように大きい場合、異なる局所解に落ちている可能性があります（`Status` 列と注記を参照）
+- If `f_diff <= 1e-6`, it can be considered to have converged to approximately the same solution
+- If `f_diff >= 1e-0` (large), it may have converged to a different local solution (see `Status` column and notes)
 
-## 検証テーブル（Verification Table）
+## Verification Table
 
 | Problem | Solver | Success | f(x*) | ‖∇f‖∞ | Iters | Func evals | f_diff (SciPy) | Status |
 |---------|--------|---------|-------|-------|-------|------------|----------------|--------|
@@ -48,14 +48,14 @@
 
 \* Note (BFGS only): For Rosenbrock (d=10), SciPy's `minimize(method='BFGS')` converged to a local minimum ($f \approx 3.986$), whereas our implementation reached the global minimum ($f \approx 0$). This discrepancy is due to differences in line search heuristics.
 
-## 注記
+## Notes
 
-- 本テーブルは **`qnm`（core implementation: BFGS / L-BFGS）** の検証です。
-- **L-BFGS-B** は `qnm.lbfgsb` が SciPy の参照実装に委譲するため、ここでは「自前実装の正当性」の対象から外しています。
+- This table verifies **`qnm` (core implementation: BFGS / L-BFGS)**.
+- **L-BFGS-B** is excluded from "correctness of self-implementation" here because `qnm.lbfgsb` delegates to SciPy's reference implementation.
 
-## Fact-Check Summary（要約）
+## Fact-Check Summary
 
-1. **勾配チェック（Gradient Check）**: ベンチマーク問題の解析的勾配を中央差分で検証（差分 < 1e-6）。
-2. **収束（Convergence）**: 代表的な問題で、妥当な最適化結果（最終値・勾配ノルム）を得ることを確認。
-3. **正定性（Positive Definiteness）**: 曲率条件 $s_k^T y_k > 0$ を明示的にチェックし、違反時は更新をリセット（本ベンチでは未発火）。
-4. **理論との対応（Source Integrity）**: `bfgs.py` / `lbfgs.py` の主要ステップを Nocedal & Wright（2006）に対応付け。
+1. **Gradient Check**: Verified analytical gradients of benchmark problems using central differences (difference < 1e-6).
+2. **Convergence**: Confirmed reasonable optimization results (final value, gradient norm) on representative problems.
+3. **Positive Definiteness**: Explicitly checks curvature condition $s_k^T y_k > 0$, resets update on violation (not triggered in this benchmark).
+4. **Source Integrity**: Maps major steps in `bfgs.py` / `lbfgs.py` to Nocedal & Wright (2006).
