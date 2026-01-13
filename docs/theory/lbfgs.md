@@ -336,7 +336,15 @@ L-BFGS は、**現代の機械学習や大規模最適化における「第一�
 
 ---
 
-## 9. 参考文献
+## 9. インタラクティブ・デモ
+
+ブラウザ上で実際の実装（`qnm.lbfgs`）を実行し、履歴バッファ（$s_k, y_k$）が更新される様子を確認できます。
+
+<ClientOnly>
+  <OptimizerVisualizer algorithm="lbfgs" problemType="rosenbrock" :dim="2" />
+</ClientOnly>
+
+## 10. 参考文献
 
 - Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization* (2nd ed.). Springer. (Chapter 7)
 - Liu, D. C., & Nocedal, J. (1989). "[On the limited memory BFGS method for large scale optimization](https://link.springer.com/article/10.1007/BF01589116)". *Mathematical Programming*, 45(1-3), 503-528.

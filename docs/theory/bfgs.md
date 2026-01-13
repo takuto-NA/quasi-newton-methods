@@ -56,5 +56,13 @@ flowchart TD
 - **計算効率**: 更新式は外積（`np.outer`）と行列積で構成されており、行列の逆計算（$O(n^3)$）を避け、$O(n^2)$ の計算量で更新が可能です。
 - **初期近似**: 初期値 $H_0$ は単位行列 $I$ とします。SciPy BFGS 等と同様の設計です。
 
-## 参考文献
+## 5. インタラクティブ・デモ
+
+ブラウザ上で実際の実装（`qnm.bfgs`）を実行し、近似逆ヘッセ行列 $H$ が更新される様子を確認できます。
+
+<ClientOnly>
+  <OptimizerVisualizer algorithm="bfgs" problemType="rosenbrock" :dim="2" />
+</ClientOnly>
+
+## 6. 参考文献
 - Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization*. Springer. (Chapter 6)
