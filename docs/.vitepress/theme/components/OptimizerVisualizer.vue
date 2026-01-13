@@ -20,6 +20,7 @@ const pythonFiles = [
   '__init__.py',
   'bfgs.py',
   'lbfgs.py',
+  'lbfgsb.py',
   'line_search.py',
   'problems.py',
   'utils.py'

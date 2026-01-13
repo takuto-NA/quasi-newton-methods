@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "docs:dev": "vitepress dev",
-    "docs:build": "vitepress build",
+    "docs:dev": "mkdir -p public/qnm && cp ../src/python/qnm/*.py public/qnm/ && vitepress dev",
+    "docs:build": "mkdir -p public/qnm && cp ../src/python/qnm/*.py public/qnm/ && vitepress build",
     "docs:preview": "vitepress preview"
   },
   "devDependencies": {
