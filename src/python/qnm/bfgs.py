@@ -52,6 +52,7 @@ def bfgs(
         x_new = x + s
         y = g_new - g
         ys = float(np.dot(y, s))
+        step_norm = float(np.linalg.norm(s))
         if ys <= 1e-12:
             # Reset to identity if curvature is lost (maintain positive definiteness)
             H = np.eye(n)
@@ -67,7 +68,12 @@ def bfgs(
             # Create a simple result object for callback
             res = OptimizeResult(x, f, g, k, n_fun, n_grad, True, "iter", "In-progress")
             # Attach H to extra_info if needed for visualization
-            res.extra_info = {"H": H.copy()}
+            res.extra_info = {
+                "H": H.copy(),
+                "alpha": float(alpha),
+                "ys": float(ys),
+                "step_norm": float(step_norm),
+            }
             callback(res)
 
     return OptimizeResult(x, f, g, max_iter, n_fun, n_grad, False, "max_iter", "Reached maximum iterations")

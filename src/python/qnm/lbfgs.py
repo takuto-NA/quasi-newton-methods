@@ -109,6 +109,7 @@ def lbfgs(
             res = OptimizeResult(x, f, g, k, n_fun, n_grad, True, "iter", "In-progress")
             # Attach s_history and y_history for visualization
             res.extra_info = {
+                "alpha": float(alpha),
                 "s_history": [s_i.tolist() for s_i in s_history],
                 "y_history": [y_i.tolist() for y_i in y_history]
             }
