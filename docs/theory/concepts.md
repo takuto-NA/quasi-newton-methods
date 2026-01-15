@@ -15,7 +15,7 @@ If you're reading these notes to *implement* or *debug* quasi-Newton methods, ma
 
 ### Minimal prerequisites (don’t overthink)
 
-- You know what a gradient is and why \(p^\top g < 0\) implies a descent direction.
+- You know what a gradient is and why $p^\top g < 0$ implies a descent direction.
 - You are comfortable with basic linear algebra (inner products, positive definiteness).
 
 ## Core Algorithms
@@ -37,13 +37,13 @@ Important components common to all algorithms.
 
 ### Notation Cheat Sheet (Used Everywhere)
 
-- \(f(x)\): objective function to minimize
-- \(g_k = \nabla f(x_k)\): gradient at iterate \(x_k\)
-- \(x_{k+1} = x_k + \alpha_k p_k\): iterate update (step length \(\alpha_k\), direction \(p_k\))
-- \(s_k = x_{k+1} - x_k\): step (displacement)
-- \(y_k = g_{k+1} - g_k\): gradient change
-- \(B_k \approx \nabla^2 f(x_k)\): Hessian approximation (sometimes used)
-- \(H_k \approx B_k^{-1}\): inverse-Hessian approximation (used by these docs and `qnm`)
+- $f(x)$: objective function to minimize
+- $g_k = \nabla f(x_k)$: gradient at iterate $x_k$
+- $x_{k+1} = x_k + \alpha_k p_k$: iterate update (step length $\alpha_k$, direction $p_k$)
+- $s_k = x_{k+1} - x_k$: step (displacement)
+- $y_k = g_{k+1} - g_k$: gradient change
+- $B_k \approx \nabla^2 f(x_k)$: Hessian approximation (sometimes used)
+- $H_k \approx B_k^{-1}$: inverse-Hessian approximation (used by these docs and `qnm`)
 
 ### Newton's Method and Quasi-Newton Methods
 
@@ -64,16 +64,41 @@ This implementation uses Nocedal & Wright's Alg. 3.5 with default values $c_1 = 
 
 These are the “always check these first” items when an optimizer behaves strangely:
 
-- **Descent direction**: verify \(p_k^\top g_k < 0\) (if not, something is wrong with \(H_k\), scaling, or numerical stability).
-- **Curvature**: verify \(s_k^\top y_k > 0\) before applying BFGS/L-BFGS updates.
+- **Descent direction**: verify $p_k^\top g_k < 0$ (if not, something is wrong with $H_k$, scaling, or numerical stability).
+- **Curvature**: verify $s_k^\top y_k > 0$ before applying BFGS/L-BFGS updates.
   - Strong Wolfe line search is commonly used because it *tends to enforce* this curvature condition in practice.
-- **Step sanity**: if \(\alpha_k\) collapses to extremely small values repeatedly, suspect scaling issues, noisy gradients, or a bug in line search.
+- **Step sanity**: if $\alpha_k$ collapses to extremely small values repeatedly, suspect scaling issues, noisy gradients, or a bug in line search.
 
 ### Where to Go Next (Reading Order)
 
 - Start with **[`bfgs.md`](bfgs.md)** to learn the full-memory update and the key invariants.
 - Then read **[`lbfgs.md`](lbfgs.md)** to see how BFGS is implemented efficiently via two-loop recursion.
 - If you have bounds, read **[`lbfgsb.md`](lbfgsb.md)** for projected gradients and stopping conditions (and why implementations are delicate).
+
+## FAQ
+
+### Q: Why not just use Newton’s method?
+
+A: Computing and storing the Hessian $\nabla^2 f(x)$ is expensive, and forming its inverse (or solving the corresponding linear system) is also costly. Quasi-Newton methods aim for fast convergence at a practical cost by updating an approximation $H_k \approx (\nabla^2 f)^{-1}$ using **only gradients**.
+
+### Q: What does $H_k$ approximate?
+
+A: The inverse Hessian. Since the search direction is $p_k = -H_k g_k$, a better $H_k$ means the method learns curvature/scale and typically produces much better directions than plain steepest descent.
+
+### Q: How do I quickly tell the optimizer is “not behaving”?
+
+A: Start with these two invariants:
+
+- **Descent**: $p_k^\top g_k < 0$
+- **Curvature**: $s_k^\top y_k > 0$ (required for stable BFGS/L-BFGS updates)
+
+### Q: Why use strong Wolfe line search?
+
+A: Practically, it helps avoid tiny steps that stall progress, reduces curvature-condition failures, and helps preserve positive definiteness (so directions remain descent directions). For BFGS-family methods, maintaining $s^\top y > 0$ is especially important.
+
+### Q: Why does $\alpha$ become extremely small?
+
+A: Common causes include poor scaling, noisy gradients (e.g., finite differences), a buggy line search, or non-smooth objectives. Logging $\alpha$, $p^\top g$, and $s^\top y$ is usually the fastest way to isolate the issue.
 
 ## References
 - Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization*. Springer.

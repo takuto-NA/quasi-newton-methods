@@ -8,14 +8,14 @@ While BFGS maintains and updates a huge $n \times n$ inverse Hessian approximati
 
 ### Key takeaway in 60 seconds
 
-L-BFGS behaves like BFGS, but instead of storing \(H_k\) (an \(n\times n\) matrix), it stores only the last \(m\) vector pairs \((s_i, y_i)\) and computes \(p_k=-H_k g_k\) via **two-loop recursion** in \(O(mn)\) time and memory.
+L-BFGS behaves like BFGS, but instead of storing $H_k$ (an $n\times n$ matrix), it stores only the last $m$ vector pairs $(s_i, y_i)$ and computes $p_k=-H_k g_k$ via **two-loop recursion** in $O(mn)$ time and memory.
 
 ### After reading this page, you should be able to
 
-- Explain what “limited-memory” means in concrete memory/time terms (\(O(n^2)\) vs \(O(mn)\)).
-- Define the stored history pairs \((s_i, y_i)\) and curvature scalars \(\rho_i\).
+- Explain what “limited-memory” means in concrete memory/time terms ($O(n^2)$ vs $O(mn)$).
+- Define the stored history pairs $(s_i, y_i)$ and curvature scalars $\rho_i$.
 - Walk through **two-loop recursion** and describe what each loop is doing conceptually.
-- Explain why scaling \(H_k^{(0)}=\gamma_k I\) matters (and how \(\gamma_k\) is chosen).
+- Explain why scaling $H_k^{(0)}=\gamma_k I$ matters (and how $\gamma_k$ is chosen).
 - List the implementation safeguards used when curvature or descent properties are violated.
 
 ### Suggested reading path (skip ahead if you want)
@@ -28,8 +28,30 @@ L-BFGS behaves like BFGS, but instead of storing \(H_k\) (an \(n\times n\) matri
 
 Skim **[`bfgs.md`](bfgs.md)** or **[`concepts.md`](concepts.md)** if you need a refresher on:
 
-- Secant condition and curvature condition \(s^\top y>0\)
+- Secant condition and curvature condition $s^\top y>0$
 - Strong Wolfe line search and why it’s used
+
+## FAQ
+
+### Q: What is the “essential” difference between L-BFGS and BFGS?
+
+A: The target and philosophy are the same (build an inverse-Hessian approximation $H_k$), but L-BFGS does **not store $H_k$ as a matrix**. Instead, it stores only the most recent $m$ pairs $(s_i, y_i)$ and computes $H_k g_k$ implicitly (see “Why Limited-memory?” and “Two-loop Recursion”).
+
+### Q: Why can two-loop recursion compute $H_k g_k$ without forming $H_k$?
+
+A: Because repeated BFGS updates admit a product-form representation. Applying those updates to a vector in the right order produces the same result as an explicit matrix-vector product, but using only inner products and axpy-style vector operations (see “Theoretical Basis” and “Product Form of BFGS”).
+
+### Q: How should I choose the memory size $m$?
+
+A: Typical values are $m=5$ to $20$. Too small and you lose curvature information (more iterations); too large and each iteration becomes more expensive. Starting around $m=10$ and tuning from there is a practical default (see the comparison table and complexity sections).
+
+### Q: Why is the scaling $H_k^{(0)}=\gamma_k I$ important?
+
+A: The mid-point scaling in two-loop recursion sets the “units/scale” of the direction. If the scale is off, line search may over-shrink steps or become unstable due to overly aggressive steps (see “Importance of Scaling Coefficient $\gamma_k$”).
+
+### Q: What if $s^\top y$ looks suspicious (tiny or negative)?
+
+A: That pair is not trustworthy as curvature information and can break positive definiteness / descent properties. Common safeguards are to skip saving the pair, clear the history, or fall back to steepest descent for that iteration (see “Implementation Safeguards”).
 
 ## 1. Background: Why "Limited-memory"?
 
