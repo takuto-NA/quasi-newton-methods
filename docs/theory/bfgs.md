@@ -2,6 +2,23 @@
 
 BFGS is one of the most widely used algorithms among quasi-Newton methods. While Newton's method directly computes the Hessian matrix $\nabla^2 f(x)$ and finds its inverse, BFGS efficiently updates an approximation $H_k$ of the inverse Hessian matrix using gradient information.
 
+## Reader Guide
+
+### After reading this page, you should be able to
+
+- Explain the role of the inverse-Hessian approximation \(H_k\) and how it generates a search direction \(p_k = -H_k g_k\).
+- Define \(s_k\), \(y_k\), and the **secant condition** \(H_{k+1}y_k=s_k\).
+- State the **curvature condition** \(s_k^\top y_k > 0\) and why it matters (positive definiteness, descent directions).
+- Recognize the “must-check invariants” when implementing/debugging BFGS.
+
+### Prerequisites
+
+If any of these feel fuzzy, skim **[`concepts.md`](concepts.md)** first:
+
+- Gradient and descent direction (\(p^\top g < 0\))
+- Strong Wolfe line search (why it’s used)
+- Positive definiteness (what it means for stability)
+
 ## 1. Basic Principles
 
 The update step in Newton's method is $p_k = -(\nabla^2 f(x_k))^{-1} \nabla f(x_k)$, but BFGS approximates this as $p_k = -H_k \nabla f(x_k)$.
@@ -32,6 +49,24 @@ $$s_k^T y_k > 0$$
 
 In practice, this condition is guaranteed by imposing **strong Wolfe conditions** in line search.
 
+## 2.1 Practical Debug Checklist (BFGS Invariants)
+
+When BFGS “blows up” or stalls, these checks usually pinpoint the issue quickly:
+
+- **Descent direction**: confirm \(p_k^\top g_k < 0\) after computing \(p_k=-H_k g_k\).
+- **Curvature**: confirm \(s_k^\top y_k > 0\) before applying the update.
+- **Step length sanity**: repeated tiny \(\alpha_k\) often indicates scaling issues, noisy gradients, or an incorrect line search.
+- **Symmetry drift**: \(H_k\) should remain (numerically) symmetric; if your implementation forms it explicitly, enforce symmetry if needed.
+
+## 2.2 Common Failure Modes (and Typical Fixes)
+
+- **Curvature condition violated** (\(s^\top y \le 0\)):
+  - Typical causes: poor line search, noisy gradients (e.g., numerical differentiation), non-smooth objectives.
+  - Typical fixes: enforce strong Wolfe, skip the update, damp the update, or reset \(H\) (this project uses a reset safeguard).
+- **Not a descent direction** (\(p^\top g \ge 0\)):
+  - Typical causes: loss of positive definiteness, bad scaling, numerical overflow/underflow.
+  - Typical fixes: reset \(H\), apply damping, or fall back to steepest descent for that iteration.
+
 ## 3. Algorithm Flow
 
 The procedure implemented in `qnm.bfgs` is as follows.
@@ -57,6 +92,15 @@ flowchart TD
 - **Maintaining Positive Definiteness**: When curvature is lost ($s_k^T y_k \le 10^{-12}$), the approximate matrix is reset to the identity matrix for numerical stability. This is a common safeguard adopted in major implementations such as SciPy and CppNumericalSolvers.
 - **Computational Efficiency**: The update formula consists of outer products (`np.outer`) and matrix products, avoiding matrix inversion ($O(n^3)$) and enabling updates in $O(n^2)$ complexity.
 - **Initial Approximation**: The initial value $H_0$ is set to the identity matrix $I$, consistent with designs like SciPy BFGS.
+
+## 4.1 Self-check Questions (Quick)
+
+Try answering these without looking back:
+
+1. Why do we enforce (or at least monitor) \(s_k^\top y_k > 0\)?
+2. If \(H_k\) is positive definite, why is \(p_k=-H_k g_k\) a descent direction?
+3. What role does strong Wolfe line search play in making BFGS stable in practice?
+4. What is the simplest safe behavior when curvature is lost?
 
 ## 5. Interactive Demo
 
