@@ -55,10 +55,19 @@ Newton's method uses a second-order Taylor expansion to determine the search dir
 
 To ensure numerical stability and convergence, all algorithms determine the step size $\alpha$ to satisfy the **strong Wolfe conditions**.
 
-1.  **Sufficient Decrease Condition**: The objective function decreases more than expected from the current gradient.
-2.  **Curvature Condition**: The gradient after the step is relaxed, maintaining positive definiteness.
+Given a current point $x_k$, a search direction $p_k$ (assumed to be a descent direction: $g_k^\top p_k < 0$), define $\phi(\alpha)=f(x_k+\alpha p_k)$.
+The **strong Wolfe conditions** (Nocedal & Wright, Eq. 3.7) are:
 
-This implementation uses Nocedal & Wright's Alg. 3.5 with default values $c_1 = 10^{-4}, c_2 = 0.9$.
+1. **Sufficient decrease (Armijo)**:
+   $$
+   f(x_k+\alpha p_k)\ \le\ f(x_k) + c_1\,\alpha\, g_k^\top p_k
+   $$
+2. **Curvature (strong)**:
+   $$
+   \left|\nabla f(x_k+\alpha p_k)^\top p_k\right|\ \le\ c_2\,\left|g_k^\top p_k\right|
+   $$
+
+This project uses Nocedal & Wright's Alg. 3.5 (`qnm.line_search`) with default values $c_1 = 10^{-4}, c_2 = 0.9$.
 
 ### Practical Invariants (Debug Checklist)
 
@@ -66,7 +75,7 @@ These are the “always check these first” items when an optimizer behaves str
 
 - **Descent direction**: verify $p_k^\top g_k < 0$ (if not, something is wrong with $H_k$, scaling, or numerical stability).
 - **Curvature**: verify $s_k^\top y_k > 0$ before applying BFGS/L-BFGS updates.
-  - Strong Wolfe line search is commonly used because it *tends to enforce* this curvature condition in practice.
+  - Strong Wolfe line search is commonly used because it helps enforce this curvature condition; under the standard setup with $s_k=\alpha_k p_k$ and $\alpha_k>0$, it implies $s_k^\top y_k>0$ when it succeeds.
 - **Step sanity**: if $\alpha_k$ collapses to extremely small values repeatedly, suspect scaling issues, noisy gradients, or a bug in line search.
 
 ### Where to Go Next (Reading Order)

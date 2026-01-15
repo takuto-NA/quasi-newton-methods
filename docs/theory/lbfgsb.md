@@ -37,6 +37,7 @@ $$x^{pg} = P_{[l,u]}(x - \nabla f(x))$$
 $$g^{pg}(x) = x - x^{pg}$$
 
 where $P_{[l,u]}(\cdot)$ is component-wise clipping (projection).
+Here and below, $g=\nabla f(x)$ denotes the (raw) gradient at the current point.
 
 #### Interpretation (Why this makes sense)
 
@@ -45,10 +46,20 @@ At an optimum with bounds, not every component can move freely. A variable sitti
 You can view the projected-gradient test as a compact way to check the bound-constrained first-order (KKT) condition:
 
 - If $x_i$ is **strictly inside** the bounds, then we want $g_i \approx 0$.
-- If $x_i = l_i$, then we only care if $g_i < 0$ (which would suggest decreasing $x_i$, but that is infeasible).
-- If $x_i = u_i$, then we only care if $g_i > 0$ (which would suggest increasing $x_i$, but that is infeasible).
+- If $x_i = l_i$ (lower bound), then we require $g_i \ge 0$ (if $g_i < 0$, decreasing $x_i$ would reduce $f$, but that move is infeasible).
+- If $x_i = u_i$ (upper bound), then we require $g_i \le 0$ (if $g_i > 0$, increasing $x_i$ would reduce $f$, but that move is infeasible).
 
-The projected gradient $g^{pg}$ becomes small exactly when there is no meaningful first-order improvement left *within the box*.
+This matches the projected-gradient definition on this page:
+
+$$g^{pg}(x) = x - P_{[l,u]}(x - g)$$
+
+Component-wise, this implies:
+
+- If $l_i < x_i < u_i$, then $g^{pg}_i = g_i$.
+- If $x_i = l_i$, then $g^{pg}_i = \min(g_i, 0)$.
+- If $x_i = u_i$, then $g^{pg}_i = \max(g_i, 0)$.
+
+So $\|g^{pg}\|_\infty$ becomes small exactly when there is no meaningful first-order improvement left *within the box*.
 
 ### 1. Generalized Cauchy Point (GCP)
 

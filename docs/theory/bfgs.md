@@ -21,7 +21,7 @@ If any of these feel fuzzy, skim **[`concepts.md`](concepts.md)** first:
 
 ## 1. Basic Principles
 
-The update step in Newton's method is $p_k = -(\nabla^2 f(x_k))^{-1} \nabla f(x_k)$, but BFGS approximates this as $p_k = -H_k \nabla f(x_k)$.
+The update step in Newton's method is $p_k = -(\nabla^2 f(x_k))^{-1} g_k$, but BFGS approximates this as $p_k = -H_k g_k$ where $g_k=\nabla f(x_k)$.
 
 ### Secant Equation
 
@@ -31,23 +31,38 @@ $$H_{k+1} y_k = s_k$$
 
 where,
 - $s_k = x_{k+1} - x_k$ (displacement)
-- $y_k = \nabla f_{k+1} - \nabla f_k$ (gradient change)
+- $y_k = g_{k+1} - g_k$ (gradient change)
 
 ### Update Formula
 
 Based on Eq. 6.17 of Nocedal & Wright (2006), the update formula for the inverse Hessian approximation $H$ is as follows.
 
-$$H_{k+1} = (I - \rho_k s_k y_k^T) H_k (I - \rho_k y_k s_k^T) + \rho_k s_k s_k^T$$
+$$H_{k+1} = (I - \rho_k s_k y_k^\top) H_k (I - \rho_k y_k s_k^\top) + \rho_k s_k s_k^\top$$
 
-where $\rho_k = \frac{1}{y_k^T s_k}$. This formula ensures that if $H_k$ is positive definite, the updated $H_{k+1}$ also maintains positive definiteness.
+where $\rho_k = \frac{1}{y_k^\top s_k}$. This formula ensures that if $H_k$ is positive definite, the updated $H_{k+1}$ also maintains positive definiteness.
 
 ## 2. Curvature Condition
 
 For $H_{k+1}$ to be positive definite, the denominator $\rho_k$ must be well-defined, i.e., the following **curvature condition** must be satisfied.
 
-$$s_k^T y_k > 0$$
+$$s_k^\top y_k > 0$$
 
-In practice, this condition is guaranteed by imposing **strong Wolfe conditions** in line search.
+In practice, when a **strong Wolfe** line search succeeds with $\alpha_k>0$ and $c_2<1$ (see **[`concepts.md`](concepts.md)**), it implies the curvature condition. One way to see it:
+
+Let $s_k=\alpha_k p_k$ and $y_k=g_{k+1}-g_k$. Then
+$$
+y_k^\top s_k=\alpha_k\,(g_{k+1}^\top p_k - g_k^\top p_k).
+$$
+Strong Wolfe gives $\lvert g_{k+1}^\top p_k\rvert \le c_2 \lvert g_k^\top p_k\rvert$ and (because $p_k$ is a descent direction) $g_k^\top p_k<0$, so in particular
+$$
+g_{k+1}^\top p_k \ge c_2\, g_k^\top p_k.
+$$
+Therefore
+$$
+y_k^\top s_k \ge \alpha_k (c_2-1)\,g_k^\top p_k > 0.
+$$
+
+Implementation note: code often uses a small numerical threshold (e.g. $y^\top s > 10^{-12}$) rather than a strict $>0$ test.
 
 ## 2.1 Practical Debug Checklist (BFGS Invariants)
 
@@ -74,24 +89,24 @@ The procedure implemented in `qnm.bfgs` is as follows.
 ```mermaid
 flowchart TD
     Start(["Start"]) --> Init["Initialize: x_0, H_0 = I"]
-    Init --> Loop{"Convergence check: ||grad|| < tol?"}
+    Init --> Loop{"Convergence check: ||g|| < tol?"}
     Loop -- Yes --> End(["End"])
-    Loop -- No --> SearchDir["Determine search direction: p_k = -H_k grad_k"]
+    Loop -- No --> SearchDir["Determine search direction: p_k = -H_k g_k"]
     SearchDir --> LineSearch["Line search: determine alpha satisfying strong Wolfe conditions"]
-    LineSearch --> UpdateX["Update variables: x_k+1 = x_k + alpha * p_k"]
-    UpdateX --> CalcGrad["Compute new gradient grad_k+1"]
-    CalcGrad --> CheckCurvature{"Curvature condition s^T y > 1e-12?"}
-    CheckCurvature -- Yes --> UpdateH["Compute H_k+1 using BFGS update formula"]
-    CheckCurvature -- No --> ResetH["Reset H_k+1 = I"]
+    LineSearch --> UpdateX["Update variables: x_{k+1} = x_k + alpha * p_k"]
+    UpdateX --> CalcGrad["Compute new gradient g_{k+1}"]
+    CalcGrad --> CheckCurvature{"Curvature condition y^T s > 1e-12?"}
+    CheckCurvature -- Yes --> UpdateH["Compute H_{k+1} using BFGS update formula"]
+    CheckCurvature -- No --> ResetH["Reset H_{k+1} = I"]
     UpdateH --> Loop
     ResetH --> Loop
 ```
 
 ## 4. Implementation Points (`qnm.bfgs`)
 
-- **Maintaining Positive Definiteness**: When curvature is lost ($s_k^T y_k \le 10^{-12}$), the approximate matrix is reset to the identity matrix for numerical stability. This is a common safeguard adopted in major implementations such as SciPy and CppNumericalSolvers.
+- **Maintaining Positive Definiteness**: When curvature is lost ($s_k^\top y_k \le 10^{-12}$), the approximation is reset to the identity for numerical stability (a common practical safeguard).
 - **Computational Efficiency**: The update formula consists of outer products (`np.outer`) and matrix products, avoiding matrix inversion ($O(n^3)$) and enabling updates in $O(n^2)$ complexity.
-- **Initial Approximation**: The initial value $H_0$ is set to the identity matrix $I$, consistent with designs like SciPy BFGS.
+- **Initial Approximation**: The initial value $H_0$ is set to the identity matrix $I$, which is a standard choice for BFGS.
 
 ## 4.1 Self-check Questions (Quick)
 
