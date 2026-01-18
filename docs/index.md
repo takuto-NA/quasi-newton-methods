@@ -6,15 +6,17 @@ A project organizing implementations of quasi-Newton methods (BFGS / L-BFGS / L-
 
 This project emphasizes not just providing implementations, but also the **evidence** for "whether it works correctly" and "why this implementation approach was chosen."
 
-- **[Theory](/theory/concepts)**: Correspondence between Nocedal & Wright algorithms and code.
-- **[Evidence](/evidence/baseline_results)**: Comparison results with SciPy and gradient check results.
-- **[References](/references/papers)**: List of foundational papers and textbooks.
+- **[Theory](./theory/concepts.md)**: Correspondence between Nocedal & Wright algorithms and code.
+- **[Evidence](./evidence/baseline_results.md)**: Comparison results with SciPy and gradient check results.
+- **[References](./references/papers.md)**: List of foundational papers and textbooks.
 
 ## Quick Start
 
 ```bash
 # (Recommended) Installation
-pip install -e ./src/python[dev]
+# Requires Python >= 3.10.
+# NOTE: PowerShell needs quotes because `[dev]` may be treated as a wildcard pattern.
+pip install -e ./src/python[dev]  # PowerShell: pip install -e ".\src\python[dev]"
 
 # Implementation Verification (Fact-check)
 python src/python/scripts/verify_implementation.py
@@ -42,7 +44,7 @@ python src/python/scripts/verify_implementation.py
 
 ## Implemented Methods
 
-1.  **[BFGS](/theory/bfgs)**: Standard method that directly updates the inverse Hessian matrix.
-2.  **[L-BFGS](/theory/lbfgs)**: Memory-efficient quasi-Newton method (Two-loop recursion).
+1.  **[BFGS](./theory/bfgs.md)**: Standard method that directly updates the inverse Hessian matrix.
+2.  **[L-BFGS](./theory/lbfgs.md)**: Memory-efficient quasi-Newton method (Two-loop recursion).
 3.  **Line Search**: Step size determination algorithm satisfying strong Wolfe conditions.
-4.  **[L-BFGS-B](/theory/lbfgsb)**: Bound-constrained version (SciPy wrapper).
+4.  **[L-BFGS-B](./theory/lbfgsb.md)**: Bound-constrained version (SciPy wrapper).

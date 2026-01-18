@@ -3,10 +3,10 @@
 References to external implementations.
 Intended for tracing "where this processing is generally implemented" when reading this repository's code.
 
-SciPy's official documentation is summarized in [SciPy](/references/scipy).
+SciPy's official documentation is summarized in [SciPy](./scipy.md).
 
 Related:
-- [Implementation Comparison (BFGS / L-BFGS)](/references/implementation_comparison)
+- [Implementation Comparison (BFGS / L-BFGS)](./implementation_comparison.md)
 
 ## SciPy
 - [optimize.minimize(method='BFGS')](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-bfgs.html)

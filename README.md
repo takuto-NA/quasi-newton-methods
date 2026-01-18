@@ -4,6 +4,8 @@ An **Evidence-first** implementation and verification repository for quasi-Newto
 
 This repository aims to clearly map standard textbook algorithms (Nocedal & Wright) to code, and to explain "why this implementation is correct" through comparisons with reference implementations (primarily SciPy).
 
+**Project Website / Documentation**: [takuto-na.github.io/quasi-newton-methods](https://takuto-na.github.io/quasi-newton-methods/)
+
 Note:
 
 - **L-BFGS-B** is provided as `qnm.lbfgsb`, but this is a **wrapper that delegates to SciPy's reference implementation** (separate from core implementation verification).
@@ -31,10 +33,13 @@ This project emphasizes not just providing implementations, but also the evidenc
 ## Quick Start
 
 ### 1. Installation
+
+Requires Python >= 3.10.
 ```bash
 python -m venv .venv
 # Windows: .\.venv\Scripts\Activate.ps1 | macOS/Linux: source .venv/bin/activate
-pip install -e ./src/python[dev]
+# NOTE: PowerShell needs quotes because `[dev]` may be treated as a wildcard pattern.
+pip install -e ./src/python[dev]  # PowerShell: pip install -e ".\src\python[dev]"
 ```
 
 ### 2. Implementation Verification (Fact-check)

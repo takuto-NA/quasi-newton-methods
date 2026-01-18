@@ -7,4 +7,4 @@ This repository uses SciPy as a **reference implementation** in some contexts, s
 - [optimize.minimize(method='L-BFGS-B')](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html)
 
 Related:
-- [External Implementations Summary (Implementations)](/references/implementations)
+- [External Implementations Summary (Implementations)](./implementations.md)

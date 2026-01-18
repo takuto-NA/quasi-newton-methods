@@ -3,9 +3,9 @@
 Baseline verification results for `qnm`.
 
 - Generated: 2026-01-06
-- Generation procedure: `PYTHONPATH=src/python python src/python/scripts/verify_implementation.py`
+- Generation procedure: After installing `qnm` (see README / `docs/index.md`), run `python src/python/scripts/verify_implementation.py`
 
-For definitions of pass/fail (`PASSED` / `ACCEPTABLE_DIFF` / `FAILED`) and treatment of primary/secondary comparisons, see [methodology](/evidence/methodology).
+For definitions of pass/fail (`PASSED` / `ACCEPTABLE_DIFF` / `FAILED`) and treatment of primary/secondary comparisons, see [methodology](./methodology.md).
 
 ## Reproducibility (Environment)
 
