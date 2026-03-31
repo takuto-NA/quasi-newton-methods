@@ -14,11 +14,21 @@ export default withMermaid(defineConfig({
   themeConfig: {
     nav: [
       { text: "Home", link: "/" },
+      { text: "Guide", link: "/guide/" },
       { text: "Theory", link: "/theory/concepts" },
       { text: "References", link: "/references/papers" },
       { text: "Evidence", link: "/evidence/methodology" }
     ],
     sidebar: [
+      {
+        text: "Guide",
+        items: [
+          { text: "Introduction", link: "/guide/" },
+          { text: "Continuous optimization for engineers", link: "/guide/continuous-optimization-for-engineers" },
+          { text: "Why gradient descent is not enough", link: "/guide/gradient-descent-is-not-enough" },
+          { text: "Why L-BFGS is often the practical default", link: "/guide/lbfgs-practical-default" }
+        ]
+      },
       {
         text: "Theory",
         items: [

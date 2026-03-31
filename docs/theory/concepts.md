@@ -2,6 +2,8 @@
 
 This project implements quasi-Newton methods based on the formulation in **Nocedal & Wright's "Numerical Optimization" (2006)**.
 
+**New to optimization?** If you prefer a dialogue-style warmup in plain language, start with the **[Engineer Guide](../guide/)** and return here for the canonical notation and algorithms.
+
 ## Reader Guide (What to Understand First)
 
 If you're reading these notes to *implement* or *debug* quasi-Newton methods, make sure you can answer the following after finishing `concepts.md`.

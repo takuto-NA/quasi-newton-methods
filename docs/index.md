@@ -4,11 +4,14 @@ A project organizing implementations of quasi-Newton methods (BFGS / L-BFGS / L-
 
 ## For First-Time Visitors
 
-This project emphasizes not just providing implementations, but also the **evidence** for "whether it works correctly" and "why this implementation approach was chosen."
+Pick a track based on what you need:
 
-- **[Theory](./theory/concepts.md)**: Correspondence between Nocedal & Wright algorithms and code.
+- **[Engineer Guide (dialogue)](./guide/)**: Plain-language motivation for engineers new to continuous optimization, then handoff to Theory.
+- **[Theory](./theory/concepts.md)**: Correspondence between Nocedal & Wright algorithms and code (canonical notation and details).
 - **[Evidence](./evidence/baseline_results.md)**: Comparison results with SciPy and gradient check results.
 - **[References](./references/papers.md)**: List of foundational papers and textbooks.
+
+This project emphasizes not just providing implementations, but also the **evidence** for "whether it works correctly" and "why this implementation approach was chosen."
 
 ## Quick Start
 

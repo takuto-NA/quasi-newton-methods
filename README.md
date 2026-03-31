@@ -14,6 +14,7 @@ Note:
 
 This project emphasizes not just providing implementations, but also the evidence for "whether it works correctly" and "why this implementation approach was chosen."
 
+- [**Engineer Guide (dialogue)**](./docs/guide/index.md): Plain-language motivation for engineers new to continuous optimization, then handoff to Theory.
 - [**Theory**](./docs/theory/concepts.md): Correspondence between Nocedal & Wright algorithms and code (includes diagrams of Two-loop recursion).
 - [**Evidence**](./docs/evidence/baseline_results.md): Comparison results with SciPy and the criteria for pass/fail.
 - [**References**](./docs/references/papers.md): Primary sources such as papers and textbooks.

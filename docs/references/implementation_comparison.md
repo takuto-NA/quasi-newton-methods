@@ -94,14 +94,14 @@ flowchart TD
 - Always first check `g^T p < 0` (`p = -H g` should hold, but can break due to numerical issues or safeguard bugs).
 - If `g^T p >= 0`, many implementations **fall back to `p = -g` as a safeguard** (especially L-BFGS types).
 
-### 2) Specify "how to handle" curvature condition \(s^T y > 0\)
+### 2) Specify "how to handle" curvature condition $s^T y > 0$
 - Theoretically guaranteed if adopting line search satisfying strong Wolfe, but in practice failures and rounding errors occur.
 - Common practical approaches:
   - **Skip history update** (PyTorch / bgranzow)
-  - **Reset (clear history or return to \(H=I\))** (design adopted in many implementations)
+  - **Reset (clear history or return to $H=I$)** (design adopted in many implementations)
   - **Add damping** (Powell damping etc.) (more advanced but increases explanation cost)
 
-### 3) When to apply initial scaling (\(\gamma I\) / Eq. 7.20)?
+### 3) When to apply initial scaling ($\gamma I$ / Eq. 7.20)?
 - Many implementations use `gamma = (s^T y)/(y^T y)` (JAXopt, PyTorch, Optim.jl etc.).
 - Important to fix "**update every time**" or "**what to do immediately after history reset**".
 
